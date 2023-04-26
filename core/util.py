@@ -6,19 +6,7 @@ from torch.nn.parallel import DistributedDataParallel as DDP
 from torchvision.utils import make_grid
 import os
 import cv2
-import enum
-
-
-# class MarioLevelTile(enum.Enum):
-#     BACKGROUND = '-'
-#     GROUND = 'X'
-#     PARAMID_BLOCK = '#'
-#     NORMAL_BLOCK = 'S'
-#     COIN_BLOCK = 'C'
-#     UP1_BLOCK = 'L'
-#     MUSHROOM_BLOCK = 'U'
-#     MUSHROOM_QUESTION_BLOCK = '@'
-
+from PIL import Image
 '''
 '-':background   √
 'X':ground  √
@@ -55,6 +43,7 @@ MARIO_CHARS = ['-', 'X', '#', 'S', 'C', 'L', 'U',
                '*', '|', '%', 'g', 'E', 'G', 'r', 'R', 'k', 'K',
                'y', 'Y', 'B', 'b']
 
+# update
 LOOKUP_TABLE = {'-': 0, '#': 1, 'S': 2, 'C': 3, 'L': 4, 'U': 5,
                 '@': 6, '?': 6, '!': 7, 'Q': 7, '2': 8, '1': 9, 'D': 0, 'o': 10,
                 't': 11, 'T': 12, '*': 13, '|': 0, '%': 2, 'g': 14, 'E': 14, 'G': 15,
@@ -64,7 +53,7 @@ REV_LOOKUP_TABLE = {0: '-', 1: '#', 2: 'S', 3: 'C', 4: 'L', 5: 'U',
                     6: '@', 7: '!', 8: '2', 9: '1', 10: 'o',
                     11: 't', 12: 'T', 13: '*', 14: 'g', 15: 'G',
                     16: 'r', 17: 'R', 18: 'k', 19: 'K', 20: 'y', 21: 'Y', 22: 'X', 23: 'B', 24: 'b'}
-
+#update
 '''
 floor(X22): 0, 1
 paramid_block(#1): 0, 2
@@ -74,26 +63,41 @@ pipe(T12 t11): 6, 4
 question block(@6 ?6 !7 Q7): 1, 0
 coin(o10): 1, 7
 background(-0, |): 5, 2
+mask: 25
 
 spiky(y20 Y21):  7, 0
 goomba(g14 E14 G15): 5, 0
 koopa(r16 R17 k18 K19): 3, 3
-bullet bill(* B23 b24): 12, 0
+bullet bill(*13 B23 b24): 11, 0
 '''
 
+# update
 tile_pos_dict = {0: (5, 2), 1: (0, 2), 2: (0, 7), 3: (0, 7), 4: (0, 7), 5: (0, 7), 6: (1, 0), 7: (1, 0),
-                 8: (1, 6), 9: (1, 6), 10: (1, 7), 11: (6, 4), 12: (6, 4), 13: (12, 0), 23: (12, 0), 24: (12, 0),
-                 14: (5, 0), 15: (5, 0), 16: (3, 3), 17: (3, 3), 18: (3, 3), 19: (3, 3), 20: (7, 0), 21: (7, 0),
-                 22: (0, 1)}
+                 8: (1, 6), 9: (1, 6), 10: (1, 7), 11: (6, 4), 12: (6, 4), 22: (0, 1), 25: (0, 0)}
+
+sprite_pos_dict = {13: (11, 0), 14: (5, 0), 15: (5, 0), 16: (3, 3), 17: (3, 3), 18: (3, 3), 19: (3, 3), 23: (11, 0),
+                   24: (11, 0), 20: (7, 0), 21: (7, 0)}
+#update
 
 
+def get_pos(n):
+    if n in sprite_pos_dict:
+        return sprite_pos_dict[n], False
+    else:
+        return tile_pos_dict[n], True
+
+
+# update
 def read_tileset():
-    path_map = r"/data/img/mapsheet.png"
-    path_sprite = r"/data/enemysheet.png"
-    path_map_img = np.array(cv2.imread(path_map))  # H W C
-    path_sprite_img = np.array(cv2.imread(path_sprite))  # H W C
-    return path_map_img, path_sprite_img
+    path_map = r"data/img/mapsheet.png"
+    path_sprite = r"data/img/enemysheet.png"
+    path_map_img = np.asarray(cv2.cvtColor(cv2.imread(path_map), cv2.COLOR_BGR2RGB))  # HWC
+    path_sprite_img = np.asarray(cv2.cvtColor(cv2.imread(path_sprite), cv2.COLOR_BGR2RGB))
+    path_map_img = np.transpose(path_map_img, (2, 0, 1))  # CHW
+    path_sprite_img = np.transpose(path_sprite_img, (2, 0, 1))  # CHW
 
+    return torch.from_numpy(path_map_img), torch.from_numpy(path_sprite_img)
+#update
 
 # return a matching number ranging from 0 to 27
 def lookup(x):
@@ -161,18 +165,68 @@ def save_txt(lines, filename, dst_dir):
         f.writelines(line + '\n' for line in lines)
 
 
-def visualize(tensor, nrow_=None):
+'''
+    tensor: (1,h,w) or (h,w)
+    map: HWC
+    sprite: HWC
+    
+    return: (h,w,3)
+'''
+def better_visualize(tensor, map, sprite):
+    shape = tensor.shape
+    h, w = shape[-2], shape[-1]
+    tile_h, tile_w = 16, 16
+    new_tensor = torch.round(tensor.mul(0.5).add(0.5).mul(len(REV_LOOKUP_TABLE)-1)).type(torch.uint8).squeeze()
+    target = torch.zeros((3, h * tile_h, w * tile_w), dtype=torch.uint8)  # RGB CHW
 
-    tensor = torch.clamp(tensor, min=-1, max=1)
+    for row in range(h):
+        for col in range(w):
+            pos, is_map = get_pos(new_tensor[row][col].item())
+            tstart_y = row * tile_h
+            tend_y = tstart_y + tile_h
+            tstart_x = col * tile_w
+            tend_x = tstart_x + tile_w
+            start_y = pos[0] * tile_h
+            end_y = start_y + tile_h
+            start_x = pos[1] * tile_w
+            end_x = start_x + tile_w
+            target[:, tstart_y:tend_y, tstart_x:tend_x] = map[:, start_y:end_y, start_x:end_x] if is_map else sprite[:, start_y:end_y, start_x:end_x]
+
+    return target
+
+
+
+def tensor2img(tensor, map, sprite, out_type=np.uint8, min_max=(-1, 1), nrow_=None):
+    '''
+    Converts a torch Tensor into an image Numpy array
+    Input: 4D(B,(3/1),H,W), 3D(C,H,W), or 2D(H,W), any range, RGB channel order
+    Output: 3D(H,W,C) or 2D(H,W), [0,255], np.uint8 (default)
+    '''
+    tensor = tensor.clamp_(*min_max)  # clamp
     n_dim = tensor.dim()
+
     if n_dim == 4:
-        n_img = len(tensor)
+        shape = tensor.shape
+        new_tensor = torch.zeros(shape[0], 3, shape[2]*16, shape[3]*16)  # NCHW
+        n_img = len(tensor)  # N
         if not nrow_:
             nrow_ = int(math.sqrt(n_img))
-        img_np = make_grid(tensor, nrow=nrow_, normalize=False).numpy()
-        img_np = np.transpose(img_np, (1, 2, 0))  # HWC, RGB
+        for i in range(n_img):
+            new_tensor[i] = better_visualize(tensor[i], map, sprite)
+        img_np = make_grid(new_tensor, nrow=nrow_, normalize=False).numpy()
+        img_np = np.transpose(img_np, (1, 2, 0))
+    elif n_dim == 3:
+        img_np = better_visualize(tensor, map, sprite).numpy()
+        img_np = np.transpose(img_np, (1, 2, 0))
+    elif n_dim == 2:
+        img_np = better_visualize(tensor, map, sprite).numpy()
+    else:
+        raise TypeError('Only support 4D, 3D and 2D tensor. But received with dimension: {:d}'.format(n_dim))
 
-def tensor2img(tensor, out_type=np.uint8, min_max=(-1, 1), nrow_=None):
+    return img_np.astype(out_type).squeeze()
+
+
+def tensor2img2(tensor, out_type=np.uint8, min_max=(-1, 1), nrow_=None):
     '''
     Converts a torch Tensor into an image Numpy array
     Input: 4D(B,(3/1),H,W), 3D(C,H,W), or 2D(H,W), any range, RGB channel order
@@ -181,7 +235,7 @@ def tensor2img(tensor, out_type=np.uint8, min_max=(-1, 1), nrow_=None):
     tensor = tensor.clamp_(*min_max)  # clamp
     n_dim = tensor.dim()
     if n_dim == 4:
-        n_img = len(tensor)  # shape[0] N
+        n_img = len(tensor)  # N
         if not nrow_:
             nrow_ = int(math.sqrt(n_img))
         img_np = make_grid(tensor, nrow=nrow_, normalize=False).numpy()
@@ -199,8 +253,8 @@ def tensor2img(tensor, out_type=np.uint8, min_max=(-1, 1), nrow_=None):
     return img_np.astype(out_type).squeeze()
 
 
-def postprocess(image):
-    return [tensor2img(img) for img in image]
+def postprocess(image, map, sprite):
+    return [tensor2img(img, map, sprite) for img in image]
 
 
 def set_seed(seed, gl_seed=0):

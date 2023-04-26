@@ -26,7 +26,7 @@ class Normalize(object):
 
     def __call__(self, sample):
         # map from [0, 1] to [-1, 1]
-        ret = (sample.add(-self.mean[0])).mul(1 / self.std[0])
+        ret = (sample.add(-self.mean[0])).mul(1/self.std[0])
         return ret
 
 
@@ -39,7 +39,7 @@ return: (16, 16) tensor with left or right half or both(when is_origin is True) 
 """
 
 # if is_origin, input[0] is ndarray
-# if !is_origin, input[0] is tensor ranging from [-1,1]
+# if !is_origin, input[0] is tensor ranging between [-1,1]
 # Many errors due to this method's flaw!!!!
 def gen_starting_point(input, is_origin=False, is_left=True):
     filename = input[1]
@@ -55,18 +55,18 @@ def gen_starting_point(input, is_origin=False, is_left=True):
     mask = get_mask(left=is_left, no_mask=is_origin)
     if is_origin:
         ndarray = data
+        img = ndarray.reshape(16, 16, 1)  # HWC
+        img = tfs(img)
     else:
         if is_left:
             ndarray[:, 8:] = data[:, 0:8]
+            ndarray[:, :8] = -1.0
         else:
             ndarray[:, 0:8] = data[:, 8:]
-
-    if is_origin:
-        img = ndarray.reshape(16, 16, 1)
-        img = tfs(img)
-    else:
-        img = ndarray.reshape(1, 16, 16)
+            ndarray[:, 8:] = -1.0
+        img = ndarray.reshape(1, 16, 16)  # CHW
         img = torch.from_numpy(img)
+
     result['gt_image'] = img[None]
     result['cond_image'] = (img * (1. - mask) + mask * torch.randn_like(img))[None]
     result['mask_image'] = (img * (1. - mask) + mask)[None]

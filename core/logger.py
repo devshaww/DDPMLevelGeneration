@@ -4,7 +4,6 @@ import importlib
 from datetime import datetime
 import logging
 import pandas as pd
-import numpy as np
 import core.util as Util
 
 class InfoLogger():
@@ -99,7 +98,8 @@ class VisualWriter():
         self.iter = iter
 
     # raw_input: dict
-    def save_panorama(self, raw_input, res, progress):
+    def save_panorama(self, raw_input, res, progress, map, sprite):
+        # res: (1, h, w)
         path = os.path.join(self.result_dir, str(self.epoch))
         os.makedirs(path, exist_ok=True)
         filename = raw_input["path"][0]
@@ -108,17 +108,17 @@ class VisualWriter():
         try:
             # txt = Util.tensor2txt(res)
             # Util.save_txt(txt, filename, path)
-            progress = Util.tensor2img(progress, nrow_=1)
-            gt = Util.tensor2img(gt)
-            panorama = Util.tensor2img(res)
-            Image.fromarray(panorama).save(os.path.join(path, "panorama.jpg"))
-            Image.fromarray(gt).save(os.path.join(path, filename + "_gt.jpg"))
-            Image.fromarray(progress).save(os.path.join(path, "progress.jpg"))
+            progress_img = Util.tensor2img(progress, map, sprite, nrow_=1)
+            gt_img = Util.tensor2img(gt, map, sprite)
+            panoram_img = Util.tensor2img(res, map, sprite)
+            Image.fromarray(panoram_img).save(os.path.join(path, "panorama.jpg"))
+            Image.fromarray(gt_img).save(os.path.join(path, filename + "_gt.jpg"))
+            Image.fromarray(progress_img).save(os.path.join(path, "progress.jpg"))
         except:
             raise NotImplementedError('You must specify the context of name and result in save_current_results functions of model.')
 
 
-    def save_images(self, results, filename=None):
+    def save_images(self, results, map, sprite, filename=None):
         # results: [gt, process, out, mask]
         # result_path = os.path.join(self.result_dir, self.phase)   # result_dir: experiments/train_uncropping_scenes_timestamp/results/val
         # os.makedirs(result_path, exist_ok=True)
@@ -134,7 +134,7 @@ class VisualWriter():
             # save output to txt file
             # txt = Util.tensor2txt(results['result'][2])      # map from [-1,1] to characters. WARNING: only works when output result is at index 2
             # results['result'] is a list
-            outputs = Util.postprocess(results['result'])    # to grayscale image: map from [-1,1] to [0,255]
+            outputs = Util.postprocess(results['result'], map, sprite)    # to grayscale image: map from [-1,1] to [0,255]
             # Util.save_txt(txt, filename, result_path)
             for i in range(len(names)):
                 Image.fromarray(outputs[i]).save(os.path.join(result_path, names[i]+".jpg"))

@@ -4,8 +4,6 @@ from core.base_model import BaseModel
 from core.logger import LogTracker
 import copy
 import data.util.panorama as panorama
-import core.util as util
-import numpy as np
 
 
 class EMA():
@@ -102,9 +100,9 @@ class Palette(BaseModel):
             ret_path.append('Out_{}'.format(self.path[idx]))
             ret_result.append(self.visuals[idx-self.batch_size].detach().float().cpu())
         
-        if self.task in ['inpainting','uncropping']:
-            ret_path.extend(['Mask_{}'.format(name) for name in self.path])
-            ret_result.extend(self.mask_image)
+        # if self.task in ['inpainting','uncropping']:
+        #     ret_path.extend(['Mask_{}'.format(name) for name in self.path])
+        #     ret_result.extend(self.mask_image)
 
         self.results_dict = self.results_dict._replace(name=ret_path, result=ret_result)
         return self.results_dict._asdict()
@@ -122,24 +120,18 @@ class Palette(BaseModel):
             ret_path.append('{}_Out'.format(iter))
             ret_result.append(self.visuals[idx - self.batch_size].detach().float().cpu())
 
-        if self.task in ['inpainting', 'uncropping']:
-            ret_path.extend(['{}_Mask'.format(name) for name in self.path])
-            ret_result.extend(self.mask_image)
-
         self.results_dict = self.results_dict._replace(name=ret_path, result=ret_result)
         return self.results_dict._asdict()
 
     def train_step(self):
         self.netG.train()
         self.train_metrics.reset()
-        self.map, self.sprite = util.read_tileset()
         for train_data in tqdm.tqdm(self.phase_loader, desc="epoch {}".format(self.epoch)):
             self.set_input(train_data)
             self.optG.zero_grad()
             loss = self.netG(self.gt_image, self.cond_image, mask=self.mask)
             loss.backward()
             self.optG.step()
-
             self.iter += self.batch_size
             self.writer.set_iter(self.epoch, self.iter, phase='train')
             self.train_metrics.update(self.loss_fn.__name__, loss.item())
@@ -292,7 +284,7 @@ class Palette(BaseModel):
                                                       y_0=self.gt_image, mask=self.mask,
                                                       sample_num=self.sample_num)
 
-        self.writer.save_images(self.save_iter_results(iter))
+        self.writer.save_images(self.save_iter_results(iter), self.map, self.sprite)
         return self.output
 
     # return (16, 0.5+0.5*iter*width) tensor
@@ -333,7 +325,8 @@ class Palette(BaseModel):
         rstart = panorama.gen_starting_point((raw_input['gt_image'], filename), is_left=False)        # right uncrop start
 
         # store panorama generation progress, should have 2*iter elements
-        self.cur_panorama = torch.zeros(h, (iter+1)*w)
+        # set to -1.0 to better visualize, because -1.0 maps to background color.
+        self.cur_panorama = torch.ones(h, (iter+1)*w) * (-1.0)
 
         # initialze input at center
         self.center_start = int(0.5*w*iter)
@@ -346,7 +339,7 @@ class Palette(BaseModel):
             left = self.left_uncrop(lstart, iter, filename)
             right = self.right_uncrop(rstart, iter, filename)
         res = torch.torch.cat((left, right), 1)               # [-1.0, 1.0] complete level of size 16, (iter+1)*16
-        self.writer.save_panorama(raw_input, res[None], self.progress)
+        self.writer.save_panorama(raw_input, res[None], self.progress, self.map, self.sprite)
 
 
 

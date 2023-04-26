@@ -33,6 +33,7 @@ class BaseModel():
         ''' logger to log file, which only work on GPU 0. writer to tensorboard and result file '''
         self.logger = logger
         self.writer = writer
+        self.map, self.sprite = Util.read_tileset()
         self.results_dict = CustomResult([],[]) # {"name":[], "result":[]}
 
     def train(self):

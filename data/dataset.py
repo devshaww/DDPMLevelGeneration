@@ -112,9 +112,6 @@ class InpaintDataset(data.Dataset):
         return torch.from_numpy(mask).permute(2, 0, 1)
 
 
-'''Modified Part'''
-
-
 class UncroppingTextDataset(data.Dataset):
     def __init__(self, data_root, mask_config={}, data_len=-1, image_size=[16, 16], loader=pil_loader):
         txts = make_txt_dataset(data_root)     # path list
@@ -142,10 +139,8 @@ class UncroppingTextDataset(data.Dataset):
         ndarray = np.zeros((16, 16), dtype=np.uint8)
         lis = []
         for st in lines:
-            # return a matching number ranging from 0 to 27
+            # return a matching number ranging from 0 to 24
             lis.append(list(map(util.lookup, st)))
-            # print(lis)
-            # lis.append(list(bytes(st, 'utf8')))
         for i, val in enumerate(lis):
             ndarray[i, :] = val
         img = ndarray.reshape(16, 16, 1)              # H W C
