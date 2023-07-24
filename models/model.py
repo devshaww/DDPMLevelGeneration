@@ -169,8 +169,8 @@ class Palette(BaseModel):
         cond_gs = gamestyle if gamestyle is not None else -1
         cond_df = difficulty if difficulty is not None else -1
 
-        # cond = torch.tensor([[cond_theme], [cond_df], [cond_gs]]).long()
-        cond = (torch.ones(1) * theme).long()
+        cond = torch.tensor([[cond_theme], [cond_df], [cond_gs]]).long()
+        # cond = (torch.ones(1) * theme).long()
         return cond
 
     def sample(self, data, label):

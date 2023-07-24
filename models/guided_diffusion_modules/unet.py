@@ -361,10 +361,10 @@ class UNet(nn.Module):
         use_scale_shift_norm=True,
         resblock_updown=True,
         use_new_attention_order=False,
-        num_classes=None,
-        # num_theme=None,
-        # num_difficulty=None,
-        # num_gamestyle=None
+        # num_classes=None,
+        num_theme=None,
+        num_difficulty=None,
+        num_gamestyle=None
     ):
 
         super().__init__()
@@ -386,7 +386,7 @@ class UNet(nn.Module):
         self.num_heads = num_heads
         self.num_head_channels = num_head_channels
         self.num_heads_upsample = num_heads_upsample
-        self.num_classes = num_classes
+        # self.num_classes = num_classes
 
         cond_embed_dim = inner_channel * 4   # original: 64x4
         self.cond_embed = nn.Sequential(
@@ -395,14 +395,14 @@ class UNet(nn.Module):
             nn.Linear(cond_embed_dim, cond_embed_dim),
         )
 
-        if num_classes is not None:
-            self.label_emb = nn.Embedding(num_classes, cond_embed_dim)    # size: num_classes x 256
-        # if num_theme is not None:
-        #     self.theme_emb = nn.Embedding(num_theme, cond_embed_dim)
-        # if num_difficulty is not None:
-        #     self.diff_emb = nn.Embedding(num_difficulty, cond_embed_dim)
-        # if num_gamestyle is not None:
-        #     self.gs_emb = nn.Embedding(num_gamestyle, cond_embed_dim)
+        # if num_classes is not None:
+        #     self.label_emb = nn.Embedding(num_classes, cond_embed_dim)    # size: num_classes x 256
+        if num_theme is not None:
+            self.theme_emb = nn.Embedding(num_theme, cond_embed_dim)
+        if num_difficulty is not None:
+            self.diff_emb = nn.Embedding(num_difficulty, cond_embed_dim)
+        if num_gamestyle is not None:
+            self.gs_emb = nn.Embedding(num_gamestyle, cond_embed_dim)
 
         ch = input_ch = int(channel_mults[0] * inner_channel)   # int(1 * 4) = 4   before: 64
         self.input_blocks = nn.ModuleList(
@@ -544,30 +544,30 @@ class UNet(nn.Module):
         :return: an [N x C x ...] Tensor of outputs.
         """
         assert (y is not None) == (
-            self.label_emb is not None
-            # self.theme_emb is not None or self.diff_emb is not None or self.gs_emb is not None
+            # self.label_emb is not None
+            self.theme_emb is not None or self.diff_emb is not None or self.gs_emb is not None
         ), "must specify y if and only if the model is class-conditional"
 
         hs = []
         gammas = gammas.view(-1, )
         emb = self.cond_embed(gamma_embedding(gammas, self.inner_channel))
 
-        if self.num_classes is not None:
-            # y: prev(3,) now(3,3) ([1, 0, 2],   # themes of this batch
-            #                       [1, 3, 1]    # gamestyles of this batch
-            #                       [0, 0, 1])   # difficulties of this batch
-            # conds:  tensor([0, 8, 0])
-            # conds.shape:  torch.Size([3])
-            assert y.shape == (x.shape[0],)
-            emb = emb + self.label_emb(y)
-        # if self.theme_emb is not None or self.diff_emb is not None or self.gs_emb is not None:
-        #     assert y.shape[1] == x.shape[0]
-        #     if self.theme_emb is not None and torch.any(y[0] == -1):
-        #         emb = emb + self.theme_emb(y[0])
-        #     if self.diff_emb is not None and torch.any(y[1] == -1):
-        #         emb = emb + self.diff_emb(y[1])
-        #     if self.gs_emb is not None and torch.any(y[2] == -1):
-        #         emb = emb + self.diff_emb(y[2])
+        # if self.num_classes is not None:
+        #     # y: prev(3,) now(3,3) ([1, 0, 2],   # themes of this batch
+        #     #                       [1, 3, 1]    # gamestyles of this batch
+        #     #                       [0, 0, 1])   # difficulties of this batch
+        #     # conds:  tensor([0, 8, 0])
+        #     # conds.shape:  torch.Size([3])
+        #     assert y.shape == (x.shape[0],)
+        #     emb = emb + self.label_emb(y)
+        if self.theme_emb is not None or self.diff_emb is not None or self.gs_emb is not None:
+            assert y.shape[1] == x.shape[0]
+            if self.theme_emb is not None and not torch.any(y[0] == -1):
+                emb = emb + self.theme_emb(y[0])
+            if self.diff_emb is not None and not torch.any(y[1] == -1):
+                emb = emb + self.diff_emb(y[1])
+            if self.gs_emb is not None and not torch.any(y[2] == -1):
+                emb = emb + self.gs_emb(y[2])
 
         h = x.type(torch.float32)
         for module in self.input_blocks:

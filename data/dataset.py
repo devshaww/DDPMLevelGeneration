@@ -303,8 +303,8 @@ class UncroppingLevelDataset(data.Dataset):
         # cond_theme[theme] = 1
         # cond_gs[gamestyle] = 1
         # cond_df[difficulty] = 1
-        # cond = torch.tensor([theme, difficulty, gamestyle]).long()
-        cond = (torch.ones(1)*theme).long()
+        cond = torch.tensor([theme, difficulty, gamestyle]).long()
+        # cond = (torch.ones(1)*theme).long()
 
         level_data = level_data.reshape(16, 16, 1)
         if self.tfs:

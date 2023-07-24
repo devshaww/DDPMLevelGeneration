@@ -107,7 +107,10 @@
                         "dropout": 0.2,
 //                        "image_size": 256
                         "image_size": 16,
-                        "num_classes": 19
+//                        "num_classes": 19
+                        "num_theme": 10,
+                        "num_difficulty": 4,
+                        "num_gamestyle": 5
                     },
                     "beta_schedule": {
                         "train": {
