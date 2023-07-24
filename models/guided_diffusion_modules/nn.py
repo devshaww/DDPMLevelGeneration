@@ -48,7 +48,6 @@ def normalization(channels):
     return GroupNorm32(32, channels)
 
 
-
 def checkpoint(func, inputs, params, flag):
     """
     Evaluate a function without caching intermediate activations, allowing for

@@ -4,6 +4,7 @@ from core.base_model import BaseModel
 from core.logger import LogTracker
 import copy
 import data.util.panorama as panorama
+import numpy as np
 
 
 class EMA():
@@ -62,8 +63,10 @@ class Palette(BaseModel):
         self.sample_num = sample_num
         self.task = task
         
-    def set_input(self, data):
+    def set_input(self, data, labels=None):
         ''' must use set_device in tensor '''
+        if not labels is None:
+            self.label = self.set_device(labels)
         self.cond_image = self.set_device(data.get('cond_image'))
         self.gt_image = self.set_device(data.get('gt_image'))
         self.mask = self.set_device(data.get('mask'))
@@ -126,10 +129,10 @@ class Palette(BaseModel):
     def train_step(self):
         self.netG.train()
         self.train_metrics.reset()
-        for train_data in tqdm.tqdm(self.phase_loader, desc="epoch {}".format(self.epoch)):
-            self.set_input(train_data)
+        for train_data, labels in tqdm.tqdm(self.phase_loader, desc="epoch {}".format(self.epoch)):
+            self.set_input(train_data, labels)
             self.optG.zero_grad()
-            loss = self.netG(self.gt_image, self.cond_image, mask=self.mask)
+            loss = self.netG(self.gt_image, self.cond_image, mask=self.mask, label=self.label)
             loss.backward()
             self.optG.step()
             self.iter += self.batch_size
@@ -145,14 +148,32 @@ class Palette(BaseModel):
                 if self.iter > self.ema_scheduler['ema_start'] and self.iter % self.ema_scheduler['ema_iter'] == 0:
                     self.EMA.update_model_average(self.netG_EMA, self.netG)
 
-        # self.sample(train_data)
-        self.gen_panorama(input=panorama.gen_rand_input(), iter=5)
+        self.sample(train_data, self.get_cond(theme=0))
+        # self.gen_panorama(input=panorama.gen_rand_input(), iter=5)
 
         for scheduler in self.schedulers:
             scheduler.step()
         return self.train_metrics.result()
 
-    def sample(self, data):
+    def get_cond(self, theme=None, gamestyle=None, difficulty=None):
+        # cond_theme = torch.zeros((10,), dtype=torch.long)
+        # cond_gs = torch.zeros((5,), dtype=torch.long)
+        # cond_df = torch.zeros((4,), dtype=torch.long)
+        # if theme is not None:
+        #     cond_theme[theme] = 1
+        # if gamestyle is not None:
+        #     cond_gs[gamestyle] = 1
+        # if difficulty is not None:
+        #     cond_df[difficulty] = 1
+        cond_theme = theme if theme is not None else -1
+        cond_gs = gamestyle if gamestyle is not None else -1
+        cond_df = difficulty if difficulty is not None else -1
+
+        # cond = torch.tensor([[cond_theme], [cond_df], [cond_gs]]).long()
+        cond = (torch.ones(1) * theme).long()
+        return cond
+
+    def sample(self, data, label):
         count = len(data['gt_image'])
         self.logger.info("\n\n\n--------------------------Sampling {} images------------------------------".format(count))
 
@@ -166,7 +187,7 @@ class Palette(BaseModel):
         self.netG.eval()
         with torch.no_grad():
             for dic in dict_list:
-                self.set_input(dic)
+                self.set_input(dic, label)
                 if self.opt['distributed']:
                     if self.task in ['inpainting', 'uncropping']:
                         self.output, self.visuals, _ = self.netG.module.restoration(self.cond_image, y_t=self.cond_image,
@@ -179,7 +200,7 @@ class Palette(BaseModel):
                     if self.task in ['inpainting', 'uncropping']:
                         self.output, self.visuals = self.netG.restoration(self.cond_image, y_t=self.cond_image,
                                                                           y_0=self.gt_image, mask=self.mask,
-                                                                          sample_num=self.sample_num)
+                                                                          sample_num=self.sample_num, label=self.label)
                     else:
                         self.output, self.visuals = self.netG.restoration(self.cond_image, sample_num=self.sample_num)
 

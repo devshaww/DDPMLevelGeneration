@@ -6,11 +6,10 @@ from torch.nn.parallel import DistributedDataParallel as DDP
 from torchvision.utils import make_grid
 import os
 import cv2
-from PIL import Image
 '''
 '-':background   √
 'X':ground  √
-'#': paramidBlock   √
+'#': paramid block   √
 'S': normal block   √
 'C': coin block (same as normal block but has coin)  √
 'L': 1up block (same as normal block but has 1 extra life)   √
@@ -23,6 +22,10 @@ from PIL import Image
 'o': coin   √
 't': empty pipe    √
 'T': flower pipe   √
+'<': pipe top left
+'>': pipe top right
+'[': pipe body left
+']': pipe body right
 '*': bullet bill  √ 
 '|': background for jump through block (green background, use background to replace)    x
 '%': jump through block  (green muchroom block like a platform, use normal block to replace)  x
@@ -37,23 +40,22 @@ from PIL import Image
 'B': bulet bill head  x
 'b': bullet bill neck and body  x
 '''
-# not generate '|' '%' 'D' 'b' 'B' '*' elements
+# not generate '|' '%' 'D' elements
 MARIO_CHARS = ['-', 'X', '#', 'S', 'C', 'L', 'U',
-               '@', '?', '!', 'Q', '2', '1', 'D', 'o', 't', 'T',
+               '@', '?', '!', 'Q', '2', '1', 'D', 'o', 't', 'T', '<', '>', '[', ']'
                '*', '|', '%', 'g', 'E', 'G', 'r', 'R', 'k', 'K',
-               'y', 'Y', 'B', 'b']
+               'y', 'Y', 'B', 'b', 'M', 'F']
 
 # update
 LOOKUP_TABLE = {'-': 0, '#': 1, 'S': 2, 'C': 3, 'L': 4, 'U': 5,
                 '@': 6, '?': 6, '!': 7, 'Q': 7, '2': 8, '1': 9, 'D': 0, 'o': 10,
                 't': 11, 'T': 12, '*': 13, '|': 0, '%': 2, 'g': 14, 'E': 14, 'G': 15,
-                'r': 16, 'R': 17, 'k': 18, 'K': 19, 'y': 20, 'Y': 21, 'X': 22, 'B': 23, 'b': 24}
+                'r': 16, 'R': 17, 'k': 18, 'K': 19, 'y': 20, 'Y': 21, 'X': 22, 'B': 23, 'b': 24, 'M': 0, 'F': 0}
 
 REV_LOOKUP_TABLE = {0: '-', 1: '#', 2: 'S', 3: 'C', 4: 'L', 5: 'U',
                     6: '@', 7: '!', 8: '2', 9: '1', 10: 'o',
                     11: 't', 12: 'T', 13: '*', 14: 'g', 15: 'G',
                     16: 'r', 17: 'R', 18: 'k', 19: 'K', 20: 'y', 21: 'Y', 22: 'X', 23: 'B', 24: 'b'}
-#update
 '''
 floor(X22): 0, 1
 paramid_block(#1): 0, 2
@@ -71,13 +73,11 @@ koopa(r16 R17 k18 K19): 3, 3
 bullet bill(*13 B23 b24): 11, 0
 '''
 
-# update
 tile_pos_dict = {0: (5, 2), 1: (0, 2), 2: (0, 7), 3: (0, 7), 4: (0, 7), 5: (0, 7), 6: (1, 0), 7: (1, 0),
                  8: (1, 6), 9: (1, 6), 10: (1, 7), 11: (6, 4), 12: (6, 4), 22: (0, 1), 25: (0, 0)}
 
 sprite_pos_dict = {13: (11, 0), 14: (5, 0), 15: (5, 0), 16: (3, 3), 17: (3, 3), 18: (3, 3), 19: (3, 3), 23: (11, 0),
                    24: (11, 0), 20: (7, 0), 21: (7, 0)}
-#update
 
 
 def get_pos(n):
@@ -166,6 +166,8 @@ def save_txt(lines, filename, dst_dir):
 
 
 '''
+    Visualize the generated tensor, replace each element with its tile or sprite.
+    
     tensor: (1,h,w) or (h,w)
     map: HWC
     sprite: HWC
@@ -193,7 +195,6 @@ def better_visualize(tensor, map, sprite):
             target[:, tstart_y:tend_y, tstart_x:tend_x] = map[:, start_y:end_y, start_x:end_x] if is_map else sprite[:, start_y:end_y, start_x:end_x]
 
     return target
-
 
 
 def tensor2img(tensor, map, sprite, out_type=np.uint8, min_max=(-1, 1), nrow_=None):
@@ -303,3 +304,65 @@ def set_device(args, distributed=False, rank=0):
     # elif torch.has_mps:
     # 	args = set_gpu(args, distributed, rank, True)
     return args
+
+
+### Just for Training Data Preparation and Data Augmentation.
+### Will Never Get Run in Actual Training Process
+
+# split a complete level to multiple 16x16 scene
+# level should be a 16xn list
+def split_level(level_path):
+    with open(level_path, 'r') as f:
+        lines = f.readlines()
+        level = [line.strip() for line in lines]
+    level_name = level_path[level_path.rfind('/')+1:].replace('.txt', '')
+    h, w = len(level), len(level[0])
+    split_num, remainder = w // 16, w % 16    # ignore remainder for now
+    for i in range(split_num):
+        splits = []
+        for j in range(h):
+            split = level[j][i*16:i*16+16]
+            splits.append(split)
+        # path = f"datasets/scenes/train/{level_name}_split{i}.txt"
+        path = os.path.join(os.path.abspath('..'), f"datasets/scenes/train/{level_name}_split{i}.txt")
+        with open(path, 'w') as f:
+            f.writelines(line + '\n' for line in splits)
+    # remainder
+    if remainder != 0:
+        fill = ['-'*16 for _ in range(16)]
+        fill[-2] = 'X' * 16
+        fill[-1] = 'X' * 16
+        # start = split_num
+        # end = split_num + remainder
+        for j in range(16):
+            line = level[j][split_num*16:]           # remainder cols
+            fill[j] = line + fill[j][remainder:]
+        # path = f"datasets/scenes/train/{level_name}_split{i+1}.txt"
+        path = os.path.join(os.path.abspath('..'), f"datasets/scenes/train/{level_name}_split{i+1}.txt")
+        with open(path, 'w') as f:
+            f.writelines(line + '\n' for line in fill)
+
+
+# exchange left half and right half of a 16x16 txt file to get a new txt file, a way of data augmentation
+# data should be a 16x16 ndarray
+def exchange_left_right(scene_path):
+    with open(scene_path, 'r') as f:
+        lines = f.readlines()
+        scene = [line.strip() for line in lines]
+    scene_name = scene_path[scene_path.rfind('/')+1:].replace('.txt', '')
+    h, w = len(scene), len(scene[0])
+    splits = []
+    for j in range(h):
+        right = scene[j][w//2:] if w % 2 == 0 else scene[j][w//2+1]
+        left = scene[j][0:w//2]
+        split = right + left
+        splits.append(split)
+    path = os.path.join(os.path.abspath('..'), f"datasets/scenes/train/{scene_name}_rl.txt")
+    with open(path, 'w') as f:
+        f.writelines(line + '\n' for line in splits)
+
+
+# abspath = os.path.abspath('..')
+# split_level(os.path.join(abspath, 'datasets/levels/lvl-1.txt'))
+# exchange_left_right(os.path.join(abspath, 'datasets/scenes/train/000000000001_0.txt'))
+

@@ -21,7 +21,7 @@ def init_obj(opt, logger, *args, default_file_name='default file', given_module=
         opt = {'name': opt}
         logger.warning('Config is a str, converts to a dict {}'.format(opt))
 
-    name = opt['name']
+    name = opt['name']    # ["data.dataset", "UncroppingLevelDataset"]
     ''' name can be list, indicates the file and class name of function '''
     if isinstance(name, list):
         file_name, class_name = name[0], name[1]
@@ -31,14 +31,14 @@ def init_obj(opt, logger, *args, default_file_name='default file', given_module=
         if given_module is not None:
             module = given_module
         else:
-            module = importlib.import_module(file_name)
+            module = importlib.import_module(file_name)    # when network: module = models.network
         
-        attr = getattr(module, class_name)    # name of class
+        attr = getattr(module, class_name)    # name of class   # Network  # UncroppingLevelDataset
         kwargs = opt.get('args', {})
         kwargs.update(modify_kwargs)  # normally, this does nothing
         ''' import class or function with args '''
         if isinstance(attr, type): 
-            ret = attr(*args, **kwargs)    # instance of class_name
+            ret = attr(*args, **kwargs)    # instance of class_name    # e.g. (*args is null here)Network(**['': value, '': value, ...])
             ret.__name__  = ret.__class__.__name__
         elif isinstance(attr, FunctionType):
             ret = partial(attr, *args, **kwargs)

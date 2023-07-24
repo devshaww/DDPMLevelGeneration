@@ -1,5 +1,6 @@
 from functools import partial
 import numpy as np
+import torch
 
 from torch.utils.data.distributed import DistributedSampler
 from torch import Generator, randperm
@@ -24,7 +25,7 @@ def define_dataloader(logger, opt):
         dataloader_args.update({'shuffle':False}) # sampler option is mutually exclusive with shuffle 
     
     ''' create dataloader and validation dataloader '''
-    dataloader = DataLoader(phase_dataset, sampler=data_sampler, worker_init_fn=worker_init_fn, **dataloader_args)
+    dataloader = DataLoader(phase_dataset, sampler=data_sampler, worker_init_fn=worker_init_fn, collate_fn=my_collate, **dataloader_args)
     ''' val_dataloader don't use DistributedSampler to run only GPU 0! '''
     if opt['global_rank']==0 and val_dataset is not None:
         dataloader_args.update(opt['datasets'][opt['phase']]['dataloader'].get('val_args',{}))
@@ -71,11 +72,33 @@ def subset_split(dataset, lengths, generator):
     """
     split a dataset into non-overlapping new datasets of given lengths. main code is from random_split function in pytorch
     """
+    # random permutation from 0 to len(dataset)-1
     indices = randperm(sum(lengths), generator=generator).tolist()
     Subsets = []
-    for offset, length in zip(np.add.accumulate(lengths), lengths):
+    for offset, length in zip(np.add.accumulate(lengths), lengths):   # data_len, data_len      data_len+valid_len, valid_len
         if length == 0:
             Subsets.append(None)
         else:
             Subsets.append(Subset(dataset, indices[offset - length : offset]))
     return Subsets
+
+
+def my_collate(batch):
+    levels = [item[0] for item in batch]
+    conds = [item[1] for item in batch]
+    # level -> {"gt_image": tensor[1x16x16], "cond_image": tensor[1x16x16], ..., "path": int}
+    ret_levels = {}
+    paths = []
+    for k in levels[0].keys():
+        ret_levels[k] = torch.tensor([])
+        for level in levels:
+            if torch.is_tensor(level[k]):
+                ret_levels[k] = torch.cat([ret_levels[k], level[k][None]], dim=0)
+            else:
+                paths.append(level[k])
+
+    ret_levels["path"] = paths
+    conds = torch.stack(conds, dim=1).squeeze(0)
+    # print("conds before t: ", conds)
+    # conds = torch.stack(conds, dim=0)
+    return ret_levels, conds

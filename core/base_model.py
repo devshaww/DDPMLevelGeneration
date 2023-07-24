@@ -54,6 +54,7 @@ class BaseModel():
             
             if self.epoch % self.opt['train']['save_checkpoint_epoch'] == 0:
                 self.logger.info('Saving the self at the end of epoch {:.0f}'.format(self.epoch))
+                self.panorama()
                 self.save_everything()
 
             # if self.epoch % self.opt['train']['val_epoch'] == 0:
@@ -69,6 +70,10 @@ class BaseModel():
 
     def test(self):
         pass
+
+    @abstractmethod
+    def panorama(self):
+        raise NotImplementedError('You must specify how to generate panorama.')
 
     @abstractmethod
     def train_step(self):
@@ -109,7 +114,7 @@ class BaseModel():
     def load_network(self, network, network_label, strict=True):
         if self.opt['path']['resume_state'] is None:
             return 
-        self.logger.info('Beign loading pretrained model [{:s}] ...'.format(network_label))
+        self.logger.info('Begin loading pretrained model [{:s}] ...'.format(network_label))
 
         model_path = "{}_{}.pth".format(self. opt['path']['resume_state'], network_label)
         
