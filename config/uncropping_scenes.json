@@ -19,7 +19,7 @@
             "which_dataset": {  // import designated dataset using arguments
                 "name": ["data.dataset", "UncroppingLevelDataset"], // import Dataset() class / function(not recommend) from data.dataset.py (default is [data.dataset.py])
                 "args":{ // arguments to initialize dataset
-                    "data_root": "datasets/smm2/train-00000-of-00196-7a2d43e1e8287c30.parquet",
+                    "data_root": "datasets/smm2/filtered_1",
                     "data_len": -1,
                     "mask_config": {
                         "mask_mode": "vertical" // onedirection | fourdirection | hybrid | manual
