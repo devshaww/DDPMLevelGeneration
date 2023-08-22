@@ -549,7 +549,7 @@ class UNet(nn.Module):
         ), "must specify y if and only if the model is class-conditional"
 
         hs = []
-        gammas = gammas.view(-1, )
+        gammas = gammas.view(-1, )   # make a 1 dimension vector
         emb = self.cond_embed(gamma_embedding(gammas, self.inner_channel))
 
         # if self.num_classes is not None:

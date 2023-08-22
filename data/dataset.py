@@ -11,15 +11,13 @@ from data.util.level import Level
 import zlib
 import pandas as pd
 from tqdm import tqdm
-import random
-
 from .util.mask import (left_half_cropping_bbox, right_half_cropping_bbox, bbox2mask, brush_stroke_mask, get_irregular_mask, random_bbox, random_cropping_bbox)
+
 
 IMG_EXTENSIONS = [
     '.jpg', '.JPG', '.jpeg', '.JPEG',
     '.png', '.PNG', '.ppm', '.PPM', '.bmp', '.BMP',
 ]
-
 
 def is_image_file(filename):
     return any(filename.endswith(extension) for extension in IMG_EXTENSIONS)
@@ -43,6 +41,7 @@ def make_txt_dataset(dir):
     return txts
 
 
+RANDOM_LEVEL = None
 # drop levels whose h<16 or w<16 out
 # return levels
 # level:
@@ -56,27 +55,32 @@ def make_level_dataset(dir):
         for idx, item in tqdm(df.iterrows(), desc='preprocessing %d samples' % df.shape[0], total=df.shape[0], position=0, leave=True):
             level_data = Level(KaitaiStream(BytesIO(zlib.decompress(item["level_data"]))))
             # filter out vertical levels and levels with subworld
-            if level_data.subworld.object_count > 0 or level_data.overworld.orientation.value == 1:
-                continue
-            max_x = -1
-            max_y = -1
-            for obj in level_data.overworld.objects:
-                x = obj.x // 160
-                if x > max_x:
-                    max_x = x
-                y = obj.y // 160
-                if y > max_y:
-                    max_y = y
-            level = {"data_id": item["data_id"], "level_data": level_data, "gamestyle": item["gamestyle"], "theme": item["theme"], "difficulty": item["difficulty"], "max_y": max_y, "max_x": max_x}
+            width = (level_data.overworld.boundary_right - level_data.overworld.boundary_left) // 16
+            height = (level_data.overworld.boundary_top - level_data.overworld.boundary_bottom) // 16
+            # if level_data.subworld.object_count > 0 or level_data.overworld.orientation.value == 1:
+            #     continue
+            # max_x = -1  # width
+            # max_y = -1  # height
+            # for obj in level_data.overworld.objects:
+            #     x = obj.x // 160
+            #     if x > max_x:
+            #         max_x = x
+            #     y = obj.y // 160
+            #     if y > max_y:
+            #         max_y = y
+            level = {"ground": level_data.overworld.ground, "data_id": item["data_id"], "objects": level_data.overworld.objects, "gamestyle": item["gamestyle"], "theme": item["theme"], "difficulty": item["difficulty"], "width": width, "height": height}
             levels.append(level)
             cnt += 1
             if cnt >= 100:
-                print(len(levels))
+                # print(len(levels))
                 break
-
     else:
         # TODO: multiple parquet files
         pass
+
+    idx = np.random.randint(0, len(levels) - 1)
+    global RANDOM_LEVEL
+    RANDOM_LEVEL = levels[idx]
 
     return levels
 
@@ -234,7 +238,7 @@ class UncroppingTextDataset(data.Dataset):
             raise NotImplementedError(
                 f'Mask mode {self.mask_mode} has not been implemented.')
 
-        return torch.from_numpy(mask).permute(2,0,1)
+        return torch.from_numpy(mask).permute(2, 0, 1)
 
 
 class ToTensor(object):
@@ -245,7 +249,7 @@ class ToTensor(object):
         # numpy: H x W x C
         # torch: C x H x W
         # map to [0, 1]
-        ret = (sample.astype(float) / 133).transpose((2, 0, 1))
+        ret = (sample.astype(float) / util.NUM_OF_OBJS).transpose((2, 0, 1))
         # ret = (sample.astype(float) / (len(util.REV_LOOKUP_TABLE) - 1)).transpose((2, 0, 1))   #HWC->CHW
         return torch.from_numpy(ret).float()
 
@@ -281,47 +285,63 @@ class UncroppingLevelDataset(data.Dataset):
         # randomly crop 16x16 from the bottom row as dataset
         level = self.levels[index]
         # 1. generate a random x coordinate to start cropping
-        if level['max_x'] <= self.image_size[0]:
+        if level['width'] <= self.image_size[1]:
             start_x = 0
         else:
-            start_x = np.random.randint(level['max_x']-self.image_size[0])
-        start_y = 0
+            start_x = np.random.randint(level['width']-self.image_size[1])
+        if level['height'] <= self.image_size[0]:
+            start_y = 0
+        else:
+            start_y = level['height'] - self.image_size[0]
         # 2. crop
-        level_data = np.zeros((self.image_size[0], self.image_size[1]), dtype=np.uint8)
-        # level_data.fill(0)
-        for obj in level['level_data'].overworld.objects:
-            if start_x <= obj.x < start_x + self.image_size[0] and start_y <= obj.y < self.image_size[1]:
+        level_objs = np.zeros((self.image_size[0], self.image_size[1]), dtype=np.uint8)
+        for obj in level['objects']:
+            obj_x = obj.x // 160
+            # obj_y = obj.y // 160
+            # origin is at the bottomleft in training data so something has to be done to deal with y
+            obj_y = level['height'] - obj.y // 160 - 1
+            if start_x + self.image_size[1] > obj_x >= start_x and start_y + self.image_size[0] > obj_y >= start_y:
                 # PROBLEM: no empty element
                 # SOLUTION: add 1 to each element and keep empty element 0
-                level_data[obj.x:obj.x+obj.width, obj.y:obj.y+obj.height] = obj.id.value + 1
+                # TODO: Might change here to take elements with no fixed size's height and width into training
+                level_objs[obj_y - start_y, start_x - obj_x] = obj.id.value + 1
+                # level_objs[obj_y - start_y : obj_y - start_y + obj.height, start_x - obj_x : start_x - obj_x + obj.width] = obj.id.value + 1
+        for g in level['ground']:
+            # origin is at the bottomleft in training data so something has to be done to deal with y
+            g_y = level['height'] - g.y - 1
+            if start_x + self.image_size[1] > g.x >= start_x and start_y + self.image_size[0] > g_y >= start_y:
+                # TODO: Change this to various ground by assigning each ground tile a unique number (>= 133)
+                level_objs[g_y - start_y, start_x - g.x] = 8    # TODO: Deal with Magic Number. Ground has an id of 7 so...
 
         # 10 themes, 5 gamestyles, 4 difficulties
         # cond_theme = torch.zeros((10,), dtype=torch.long)
         # cond_gs = torch.zeros((5,), dtype=torch.long)
         # cond_df = torch.zeros((4,), dtype=torch.long)
-        theme, gamestyle, difficulty = level['theme'], level['gamestyle'], level['difficulty']
         # cond_theme[theme] = 1
         # cond_gs[gamestyle] = 1
         # cond_df[difficulty] = 1
+
+        # TODO: Control What To Condition Here If Needed. Will Not Be Taken Into Training If Condition Value Set To -1
+        theme, gamestyle, difficulty = level['theme'], level['gamestyle'], level['difficulty']
         cond = torch.tensor([theme, difficulty, gamestyle]).long()
         # cond = (torch.ones(1)*theme).long()
 
-        level_data = level_data.reshape(16, 16, 1)
+        level_objs = level_objs.reshape(self.image_size[0], self.image_size[1], 1)
         if self.tfs:
-            level_data = self.tfs(level_data)
+            level_objs = self.tfs(level_objs)
 
         ret = {}
 
-        img = level_data
+        img = level_objs
         mask = self.get_mask()
         cond_image = img * (1. - mask) + mask * torch.randn_like(img)
         mask_img = img * (1. - mask) + mask
 
-        ret['gt_image'] = level_data
+        ret['gt_image'] = level_objs
         ret['cond_image'] = cond_image
         ret['mask_image'] = mask_img
         ret['mask'] = mask
-        ret['path'] = level['data_id']
+        ret['path'] = str(level['data_id'])
 
         return ret, cond
 

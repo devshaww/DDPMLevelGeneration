@@ -1,0 +1,801 @@
+{
+    "goomba": {
+        "x": 0,
+        "y": 0,
+        "width": 1,
+        "height": 1
+    },
+    "koopa": {
+        "x": 0,
+        "y": 0,
+        "width": 1,
+        "height": 2
+    },
+    "piranha_flower": {
+        "x": 0,
+        "y": 0,
+        "width": 1,
+        "height": 2
+    },
+    "hammer_bro": {
+        "x": 0,
+        "y": 0,
+        "width": 1,
+        "height": 2
+    },
+    "block": {
+        "x": 0,
+        "y": 0,
+        "width": 1,
+        "height": 1
+    },
+    "question_block": {
+        "x": 0,
+        "y": 0,
+        "width": 1,
+        "height": 1
+    },
+    "hard_block": {
+        "x": 0,
+        "y": 0,
+        "width": 1,
+        "height": 1
+    },
+    "ground": {
+        "x": 0,
+        "y": 0,
+        "width": 1,
+        "height": 1
+    },
+    "coin": {
+        "x": 0,
+        "y": 0,
+        "width": 1,
+        "height": 1
+    },
+    "pipe": {
+        "x": 0,
+        "y": 0,
+        "width": 2,
+        "height": 2
+    },
+    "spring": {
+        "x": 0,
+        "y": 0,
+        "width": 1,
+        "height": 1
+    },
+    "lift": {
+        "x": 0,
+        "y": 0,
+        "width": 4,
+        "height": 1
+    },
+    "thwomp": {
+        "x": 0,
+        "y": 0,
+        "width": 4,
+        "height": 4
+    },
+    "bullet_bill_blaster": {
+        "x": 0,
+        "y": 0,
+        "width": 1,
+        "height": 2
+    },
+    "mushroom_platform": {
+        "x": 0,
+        "y": 0,
+        "width": 3,
+        "height": 3
+    },
+    "bob_omb": {
+        "x": 0,
+        "y": 0,
+        "width": 1,
+        "height": 1
+    },
+    "semisolid_platform": {
+        "x": 0,
+        "y": 0,
+        "width": 3,
+        "height": 4
+    },
+    "bridge": {
+        "x": 0,
+        "y": 0,
+        "width": 4,
+        "height": 2
+    },
+    "p_switch": {
+        "x": 0,
+        "y": 0,
+        "width": 1,
+        "height": 1
+    },
+    "pow": {
+        "x": 0,
+        "y": 0,
+        "width": 1,
+        "height": 1
+    },
+    "super_mushroom": {
+        "x": 0,
+        "y": 0,
+        "width": 1,
+        "height": 1
+    },
+    "donut_block": {
+        "x": 0,
+        "y": 0,
+        "width": 1,
+        "height": 1
+    },
+    "cloud": {
+        "x": 0,
+        "y": 0,
+        "width": 1,
+        "height": 1
+    },
+    "note_block": {
+        "x": 0,
+        "y": 0,
+        "width": 1,
+        "height": 1
+    },
+    "fire_bar": {
+        "x": 0,
+        "y": 0,
+        "width": 1,
+        "height": 1
+    },
+    "spiny": {
+        "x": 0,
+        "y": 0,
+        "width": 1,
+        "height": 1
+    },
+    "goal_ground": {
+        "x": 0,
+        "y": 0,
+        "width": 1,
+        "height": 1
+    },
+    "goal": {
+        "x": 0,
+        "y": 0,
+        "width": 1,
+        "height": 1
+    },
+    "buzzy_beetle": {
+        "x": 0,
+        "y": 0,
+        "width": 1,
+        "height": 1
+    },
+    "hidden_block": {
+        "x": 0,
+        "y": 0,
+        "width": 1,
+        "height": 1
+    },
+    "lakitu": {
+        "x": 0,
+        "y": 0,
+        "width": 1,
+        "height": 2
+    },
+    "lakitu_cloud": {
+        "x": 0,
+        "y": 0,
+        "width": 1,
+        "height": 2
+    },
+    "banzai_bill": {
+        "x": 0,
+        "y": 0,
+        "width": 4,
+        "height": 4
+    },
+    "one_up": {
+        "x": 0,
+        "y": 0,
+        "width": 1,
+        "height": 1
+    },
+    "fire_flower": {
+        "x": 0,
+        "y": 0,
+        "width": 1,
+        "height": 1
+    },
+    "super_star": {
+        "x": 0,
+        "y": 0,
+        "width": 1,
+        "height": 1
+    },
+    "lava_lift": {
+        "x": 0,
+        "y": 0,
+        "width": 4,
+        "height": 1
+    },
+    "starting_brick": {
+        "x": 0,
+        "y": 0,
+        "width": 1,
+        "height": 1
+    },
+    "starting_arrow": {
+        "x": 0,
+        "y": 0,
+        "width": 1,
+        "height": 1
+    },
+    "magikoopa": {
+        "x": 0,
+        "y": 0,
+        "width": 2,
+        "height": 2
+    },
+    "spike_top": {
+        "x": 0,
+        "y": 0,
+        "width": 1,
+        "height": 1
+    },
+    "boo": {
+        "x": 0,
+        "y": 0,
+        "width": 1,
+        "height": 1
+    },
+    "clown_car": {
+        "x": 0,
+        "y": 0,
+        "width": 2,
+        "height": 2
+    },
+    "spikes": {
+        "x": 0,
+        "y": 0,
+        "width": 1,
+        "height": 1
+    },
+    "big_mushroom": {
+        "x": 0,
+        "y": 0,
+        "width": 1,
+        "height": 1
+    },
+    "shoe_goomba": {
+        "x": 0,
+        "y": 0,
+        "width": 1,
+        "height": 1
+    },
+    "dry_bones": {
+        "x": 0,
+        "y": 0,
+        "width": 1,
+        "height": 1
+    },
+    "cannon": {
+        "x": 0,
+        "y": 0,
+        "width": 1,
+        "height": 1
+    },
+    "blooper": {
+        "x": 0,
+        "y": 0,
+        "width": 1,
+        "height": 1
+    },
+    "castle_bridge": {
+        "x": 0,
+        "y": 0,
+        "width": 1,
+        "height": 1
+    },
+    "jumping_machine": {
+        "x": 0,
+        "y": 0,
+        "width": 1,
+        "height": 1
+    },
+    "skipsqueak": {
+        "x": 0,
+        "y": 0,
+        "width": 1,
+        "height": 1
+    },
+    "wiggler": {
+        "x": 0,
+        "y": 0,
+        "width": 1,
+        "height": 1
+    },
+    "fast_conveyor_belt": {
+        "x": 0,
+        "y": 0,
+        "width": 6,
+        "height": 1
+    },
+    "burner": {
+        "x": 0,
+        "y": 0,
+        "width": 1,
+        "height": 1
+    },
+    "door": {
+        "x": 0,
+        "y": 0,
+        "width": 1,
+        "height": 2
+    },
+    "cheep_cheep": {
+        "x": 0,
+        "y": 0,
+        "width": 1,
+        "height": 1
+    },
+    "muncher": {
+        "x": 0,
+        "y": 0,
+        "width": 1,
+        "height": 1
+    },
+    "rocky_wrench": {
+        "x": 0,
+        "y": 0,
+        "width": 1,
+        "height": 1
+    },
+    "track": {
+        "x": 0,
+        "y": 0,
+        "width": 1,
+        "height": 1
+    },
+    "lava_bubble": {
+        "x": 0,
+        "y": 0,
+        "width": 1,
+        "height": 1
+    },
+    "chain_chomp": {
+        "x": 0,
+        "y": 0,
+        "width": 1,
+        "height": 1
+    },
+    "bowser": {
+        "x": 0,
+        "y": 0,
+        "width": 2,
+        "height": 2
+    },
+    "ice_block": {
+        "x": 0,
+        "y": 0,
+        "width": 1,
+        "height": 1
+    },
+    "vine": {
+        "x": 0,
+        "y": 0,
+        "width": 1,
+        "height": 15
+    },
+    "stingby": {
+        "x": 0,
+        "y": 0,
+        "width": 1,
+        "height": 1
+    },
+    "arrow": {
+        "x": 0,
+        "y": 0,
+        "width": 2,
+        "height": 2
+    },
+    "one_way": {
+        "x": 0,
+        "y": 0,
+        "width": 2,
+        "height": 2
+    },
+    "saw": {
+        "x": 0,
+        "y": 0,
+        "width": 3,
+        "height": 3
+    },
+    "player": {
+        "x": 0,
+        "y": 0,
+        "width": 1,
+        "height": 1
+    },
+    "big_coin": {
+        "x": 0,
+        "y": 0,
+        "width": 2,
+        "height": 2
+    },
+    "half_collision_platform": {
+        "x": 0,
+        "y": 0,
+        "width": 6,
+        "height": 7
+    },
+    "koopa_car": {
+        "x": 0,
+        "y": 0,
+        "width": 2,
+        "height": 2
+    },
+    "cinobio": {
+        "x": 0,
+        "y": 0,
+        "width": 1,
+        "height": 1
+    },
+    "spike_ball": {
+        "x": 0,
+        "y": 0,
+        "width": 1,
+        "height": 1
+    },
+    "stone": {
+        "x": 0,
+        "y": 0,
+        "width": 1,
+        "height": 1
+    },
+    "twister": {
+        "x": 0,
+        "y": 0,
+        "width": 1,
+        "height": 1
+    },
+    "boom_boom": {
+        "x": 0,
+        "y": 0,
+        "width": 4,
+        "height": 4
+    },
+    "pokey": {
+        "x": 0,
+        "y": 0,
+        "width": 1,
+        "height": 1
+    },
+    "p_block": {
+        "x": 0,
+        "y": 0,
+        "width": 1,
+        "height": 1
+    },
+    "sprint_platform": {
+        "x": 0,
+        "y": 0,
+        "width": 1,
+        "height": 1
+    },
+    "smb2_mushroom": {
+        "x": 0,
+        "y": 0,
+        "width": 1,
+        "height": 1
+    },
+    "donut": {
+        "x": 0,
+        "y": 0,
+        "width": 3,
+        "height": 3
+    },
+    "skewer": {
+        "x": 0,
+        "y": 0,
+        "width": 4,
+        "height": 4
+    },
+    "snake_block": {
+        "x": 0,
+        "y": 0,
+        "width": 4,
+        "height": 1
+    },
+    "track_block": {
+        "x": 0,
+        "y": 0,
+        "width": 2,
+        "height": 2
+    },
+    "charvaargh": {
+        "x": 0,
+        "y": 0,
+        "width": 4,
+        "height": 4
+    },
+    "slight_slope": {
+        "x": 0,
+        "y": 0,
+        "width": 4,
+        "height": 2
+    },
+    "steep_slope": {
+        "x": 0,
+        "y": 0,
+        "width": 9,
+        "height": 8
+    },
+    "reel_camera": {
+        "x": 0,
+        "y": 0,
+        "width": 3,
+        "height": 1
+    },
+    "checkpoint_flag": {
+        "x": 0,
+        "y": 0,
+        "width": 2,
+        "height": 2
+    },
+    "seesaw": {
+        "x": 0,
+        "y": 0,
+        "width": 5,
+        "height": 1
+    },
+    "red_coin": {
+        "x": 0,
+        "y": 0,
+        "width": 1,
+        "height": 1
+    },
+    "clear_pipe": {
+        "x": 0,
+        "y": 0,
+        "width": 1,
+        "height": 1
+    },
+    "conveyor_belt": {
+        "x": 0,
+        "y": 0,
+        "width": 9,
+        "height": 8
+    },
+    "key": {
+        "x": 0,
+        "y": 0,
+        "width": 1,
+        "height": 1
+    },
+    "ant_trooper": {
+        "x": 0,
+        "y": 0,
+        "width": 1,
+        "height": 1,
+        "": {}
+    },
+    "warp_box": {
+        "x": 0,
+        "y": 0,
+        "width": 1,
+        "height": 1
+    },
+    "bowser_jr": {
+        "x": 0,
+        "y": 0,
+        "width": 1,
+        "height": 1
+    },
+    "on_off_block": {
+        "x": 0,
+        "y": 0,
+        "width": 1,
+        "height": 1
+    },
+    "dotted_line_block": {
+        "x": 0,
+        "y": 0,
+        "width": 1,
+        "height": 1
+    },
+    "water_marker": {
+        "x": 0,
+        "y": 0,
+        "width": 1,
+        "height": 1
+    },
+    "monty_mole": {
+        "x": 0,
+        "y": 0,
+        "width": 1,
+        "height": 1
+    },
+    "fish_bone": {
+        "x": 0,
+        "y": 0,
+        "width": 2,
+        "height": 1
+    },
+    "angry_sun": {
+        "x": 0,
+        "y": 0,
+        "width": 2,
+        "height": 2
+    },
+    "swinging_claw": {
+        "x": 0,
+        "y": 0,
+        "width": 3,
+        "height": 4
+    },
+    "tree": {
+        "x": 0,
+        "y": 0,
+        "width": 4,
+        "height": 8
+    },
+    "piranha_creeper": {
+        "x": 0,
+        "y": 0,
+        "width": 2,
+        "height": 2
+    },
+    "blinking_block": {
+        "x": 0,
+        "y": 0,
+        "width": 1,
+        "height": 1
+    },
+    "sound_effect": {
+        "x": 0,
+        "y": 0,
+        "width": 1,
+        "height": 1
+    },
+    "spike_block": {
+        "x": 0,
+        "y": 0,
+        "width": 2,
+        "height": 2
+    },
+    "mechakoopa": {
+        "x": 0,
+        "y": 0,
+        "width": 1,
+        "height": 1
+    },
+    "crate": {
+        "x": 0,
+        "y": 0,
+        "width": 1,
+        "height": 1
+    },
+    "mushroom_trampoline": {
+        "x": 0,
+        "y": 0,
+        "width": 4,
+        "height": 1
+    },
+    "porkupuffer": {
+        "x": 0,
+        "y": 0,
+        "width": 2,
+        "height": 2
+    },
+    "cinobic": {
+        "x": 0,
+        "y": 0,
+        "width": 1,
+        "height": 1
+    },
+    "super_hammer": {
+        "x": 0,
+        "y": 0,
+        "width": 1,
+        "height": 1
+    },
+    "bully": {
+        "x": 0,
+        "y": 0,
+        "width": 2,
+        "height": 2
+    },
+    "icicle": {
+        "x": 0,
+        "y": 0,
+        "width": 1,
+        "height": 1
+    },
+    "exclamation_block": {
+        "x": 0,
+        "y": 0,
+        "width": 2,
+        "height": 2
+    },
+    "lemmy": {
+        "x": 0,
+        "y": 0,
+        "width": 1,
+        "height": 1
+    },
+    "morton": {
+        "x": 0,
+        "y": 0,
+        "width": 1,
+        "height": 1
+    },
+    "larry": {
+        "x": 0,
+        "y": 0,
+        "width": 1,
+        "height": 1
+    },
+    "wendy": {
+        "x": 0,
+        "y": 0,
+        "width": 1,
+        "height": 1
+    },
+    "iggy": {
+        "x": 0,
+        "y": 0,
+        "width": 1,
+        "height": 1
+    },
+    "roy": {
+        "x": 0,
+        "y": 0,
+        "width": 1,
+        "height": 1
+    },
+    "ludwig": {
+        "x": 0,
+        "y": 0,
+        "width": 1,
+        "height": 1
+    },
+    "cannon_box": {
+        "x": 0,
+        "y": 0,
+        "width": 1,
+        "height": 1
+    },
+    "propeller_box": {
+        "x": 0,
+        "y": 0,
+        "width": 1,
+        "height": 1
+    },
+    "goomba_mask": {
+        "x": 0,
+        "y": 0,
+        "width": 1,
+        "height": 1
+    },
+    "bullet_bill_mask": {
+        "x": 0,
+        "y": 0,
+        "width": 1,
+        "height": 1
+    },
+    "red_pow_box": {
+        "x": 0,
+        "y": 0,
+        "width": 1,
+        "height": 1
+    },
+    "on_off_trampoline": {
+        "x": 0,
+        "y": 0,
+        "width": 1,
+        "height": 1
+    }
+}

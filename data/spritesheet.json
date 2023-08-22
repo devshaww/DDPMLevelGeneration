@@ -1,0 +1,68 @@
+{
+    "goomba": {
+        "x": 81,
+        "y": 32,
+        "width": 1,
+        "height": 1
+    },
+    "koopa": {
+        "x": 73,
+        "y": 5,
+        "width": 1,
+        "height": 2
+    },
+    "piranha_flower": {
+        "x": 48,
+        "y": 80,
+        "width": 1,
+        "height": 1
+    },
+    "spiny": {
+        "x": 81,
+        "y": 78,
+        "width": 1,
+        "height": 1
+    },
+    "hammer_bro": {
+        "x": 63,
+        "y": 73,
+        "width": 1,
+        "height": 2
+    },
+    "buzzy_beetle": {
+        "x": 79,
+        "y": 16,
+        "width": 1,
+        "height": 1
+    },
+    "blooper": {
+        "x": 83,
+        "y": 24,
+        "width": 1,
+        "height": 1
+    },
+    "cheep_cheep": {
+        "x": 79,
+        "y": 64,
+        "width": 1,
+        "height": 1
+    },
+    "fire_bar": {
+        "x": 77,
+        "y": 27,
+        "width": 1,
+        "height": 1
+    },
+    "lakitu": {
+        "x": 64,
+        "y": 80,
+        "width": 1,
+        "height": 1
+    },
+    "bullet_bill_blaster": {
+        "x": 18,
+        "y": 76,
+        "width": 1,
+        "height": 2
+    },
+}

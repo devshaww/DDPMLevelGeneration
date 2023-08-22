@@ -6,6 +6,9 @@ from torch.nn.parallel import DistributedDataParallel as DDP
 from torchvision.utils import make_grid
 import os
 import cv2
+from PIL import Image
+import json
+
 '''
 '-':background   √
 'X':ground  √
@@ -43,10 +46,10 @@ import cv2
 # not generate '|' '%' 'D' elements
 MARIO_CHARS = ['-', 'X', '#', 'S', 'C', 'L', 'U',
                '@', '?', '!', 'Q', '2', '1', 'D', 'o', 't', 'T', '<', '>', '[', ']'
-               '*', '|', '%', 'g', 'E', 'G', 'r', 'R', 'k', 'K',
+                                                                                '*', '|', '%', 'g', 'E', 'G', 'r', 'R',
+               'k', 'K',
                'y', 'Y', 'B', 'b', 'M', 'F']
 
-# update
 LOOKUP_TABLE = {'-': 0, '#': 1, 'S': 2, 'C': 3, 'L': 4, 'U': 5,
                 '@': 6, '?': 6, '!': 7, 'Q': 7, '2': 8, '1': 9, 'D': 0, 'o': 10,
                 't': 11, 'T': 12, '*': 13, '|': 0, '%': 2, 'g': 14, 'E': 14, 'G': 15,
@@ -56,6 +59,11 @@ REV_LOOKUP_TABLE = {0: '-', 1: '#', 2: 'S', 3: 'C', 4: 'L', 5: 'U',
                     6: '@', 7: '!', 8: '2', 9: '1', 10: 'o',
                     11: 't', 12: 'T', 13: '*', 14: 'g', 15: 'G',
                     16: 'r', 17: 'R', 18: 'k', 19: 'K', 20: 'y', 21: 'Y', 22: 'X', 23: 'B', 24: 'b'}
+
+NUM_OF_OBJS = 133
+
+BG_COLOR_RGB = [99, 144, 255]
+
 '''
 floor(X22): 0, 1
 paramid_block(#1): 0, 2
@@ -73,31 +81,193 @@ koopa(r16 R17 k18 K19): 3, 3
 bullet bill(*13 B23 b24): 11, 0
 '''
 
-tile_pos_dict = {0: (5, 2), 1: (0, 2), 2: (0, 7), 3: (0, 7), 4: (0, 7), 5: (0, 7), 6: (1, 0), 7: (1, 0),
-                 8: (1, 6), 9: (1, 6), 10: (1, 7), 11: (6, 4), 12: (6, 4), 22: (0, 1), 25: (0, 0)}
+# tile_pos_dict = {0: (5, 2), 1: (0, 2), 2: (0, 7), 3: (0, 7), 4: (0, 7), 5: (0, 7), 6: (1, 0), 7: (1, 0),
+#                  8: (1, 6), 9: (1, 6), 10: (1, 7), 11: (6, 4), 12: (6, 4), 22: (0, 1), 25: (0, 0)}
+#
+# sprite_pos_dict = {13: (11, 0), 14: (5, 0), 15: (5, 0), 16: (3, 3), 17: (3, 3), 18: (3, 3), 19: (3, 3), 23: (11, 0),
+#                    24: (11, 0), 20: (7, 0), 21: (7, 0)}
 
-sprite_pos_dict = {13: (11, 0), 14: (5, 0), 15: (5, 0), 16: (3, 3), 17: (3, 3), 18: (3, 3), 19: (3, 3), 23: (11, 0),
-                   24: (11, 0), 20: (7, 0), 21: (7, 0)}
+# tile_pos_dict = {"background": (5, 2), "hard_block": (0, 2), "block": (0, 6), "question_block": (1, 0),
+#                  "ground": (0, 1), "dotted_line_block": (1, 6), "hidden_block": (1, 6), "coin": (1, 7),
+#                  "pipe": {"top": (2, 2), "bottom": (2, 4)}, "bullet_bill_blaster": {"top": (0, 3), "bottom": (0, 4)},
+#                  "mushroom_platform": (5, 3), "cloud": {"top": (4, 0), "bottom": (4, 2), "right": (3, 7)},
+#                  "semisolid_platform": (5, 7)}
+#
+# sprite_pos_dict = {"piranha_flower": (12, 1), "goomba": (5, 0), "koopa": (2, 2), "spiny": (7, 0)}
 
+# map id value to string name to find its position
+enum_reverse_mapping = {
+    0: "goomba",
+    1: "koopa",
+    2: "piranha_flower",
+    3: "hammer_bro",
+    4: "block",
+    5: "question_block",
+    6: "hard_block",
+    7: "ground",
+    8: "coin",
+    9: "pipe",
+    10: "spring",
+    11: "lift",
+    12: "thwomp",
+    13: "bullet_bill_blaster",
+    14: "mushroom_platform",
+    15: "bob_omb",
+    16: "semisolid_platform",
+    17: "bridge",
+    18: "p_switch",
+    19: "pow",
+    20: "super_mushroom",
+    21: "donut_block",
+    22: "cloud",
+    23: "note_block",
+    24: "fire_bar",
+    25: "spiny",
+    26: "goal_ground",
+    27: "goal",
+    28: "buzzy_beetle",
+    29: "hidden_block",
+    30: "lakitu",
+    31: "lakitu_cloud",
+    32: "banzai_bill",
+    33: "one_up",  # mushroom get from block
+    34: "fire_flower",
+    35: "super_star",
+    36: "lava_lift",
+    37: "starting_brick",
+    38: "starting_arrow",
+    39: "magikoopa",
+    40: "spike_top",
+    41: "boo",
+    42: "clown_car",
+    43: "spikes",
+    44: "big_mushroom",
+    45: "shoe_goomba",
+    46: "dry_bones",
+    47: "cannon",
+    48: "blooper",
+    49: "castle_bridge",
+    50: "jumping_machine",
+    51: "skipsqueak",
+    52: "wiggler",
+    53: "fast_conveyor_belt",
+    54: "burner",
+    55: "door",
+    56: "cheep_cheep",
+    57: "muncher",
+    58: "rocky_wrench",
+    59: "track",
+    60: "lava_bubble",
+    61: "chain_chomp",
+    62: "bowser",
+    63: "ice_block",
+    64: "vine",
+    65: "stingby",
+    66: "arrow",
+    67: "one_way",
+    68: "saw",
+    69: "player",
+    70: "big_coin",
+    71: "half_collision_platform",
+    72: "koopa_car",
+    73: "cinobio",
+    74: "spike_ball",
+    75: "stone",
+    76: "twister",
+    77: "boom_boom",
+    78: "pokey",
+    79: "p_block",
+    80: "sprint_platform",
+    81: "smb2_mushroom",
+    82: "donut",
+    83: "skewer",
+    84: "snake_block",
+    85: "track_block",
+    86: "charvaargh",
+    87: "slight_slope",
+    88: "steep_slope",
+    89: "reel_camera",
+    90: "checkpoint_flag",
+    91: "seesaw",
+    92: "red_coin",
+    93: "clear_pipe",
+    94: "conveyor_belt",
+    95: "key",
+    96: "ant_trooper",
+    97: "warp_box",
+    98: "bowser_jr",
+    99: "on_off_block",
+    100: "dotted_line_block",
+    101: "water_marker",
+    102: "monty_mole",
+    103: "fish_bone",
+    104: "angry_sun",
+    105: "swinging_claw",
+    106: "tree",
+    107: "piranha_creeper",
+    108: "blinking_block",
+    109: "sound_effect",
+    110: "spike_block",
+    111: "mechakoopa",
+    112: "crate",
+    113: "mushroom_trampoline",
+    114: "porkupuffer",
+    115: "cinobic",
+    116: "super_hammer",
+    117: "bully",
+    118: "icicle",
+    119: "exclamation_block",
+    120: "lemmy",
+    121: "morton",
+    122: "larry",
+    123: "wendy",
+    124: "iggy",
+    125: "roy",
+    126: "ludwig",
+    127: "cannon_box",
+    128: "propeller_box",
+    129: "goomba_mask",
+    130: "bullet_bill_mask",
+    131: "red_pow_box",
+    132: "on_off_trampoline",
+}
 
-def get_pos(n):
-    if n in sprite_pos_dict:
-        return sprite_pos_dict[n], False
+def read_pos_dict():
+    with open('data/spritesheet.json', 'r') as sf:
+        sf_dic = json.load(sf)
+    with open('data/tileset.json', 'r') as tf:
+        tf_dic = json.load(tf)
+
+    return sf_dic, tf_dic
+
+sf_dic, tf_dic = read_pos_dict()
+
+def get_frame(n):
+    name = enum_reverse_mapping.get(n, 'background')
+    if name in sf_dic:
+        return sf_dic[name], False, name
+    elif name in tf_dic:
+        return tf_dic[name], True, name
     else:
-        return tile_pos_dict[n], True
+        return None
 
 
-# update
-def read_tileset():
-    path_map = r"data/img/mapsheet.png"
-    path_sprite = r"data/img/enemysheet.png"
-    path_map_img = np.asarray(cv2.cvtColor(cv2.imread(path_map), cv2.COLOR_BGR2RGB))  # HWC
-    path_sprite_img = np.asarray(cv2.cvtColor(cv2.imread(path_sprite), cv2.COLOR_BGR2RGB))
-    path_map_img = np.transpose(path_map_img, (2, 0, 1))  # CHW
-    path_sprite_img = np.transpose(path_sprite_img, (2, 0, 1))  # CHW
+def read_template():
+    path_tileset = r"data/img/tileset.png"
+    path_spritesheet = r"data/img/spritesheet.png"
+    # tileset_img = cv2.imread(path_tileset, cv2.IMREAD_UNCHANGED)
+    # spritesheet_img = cv2.imread(path_spritesheet, cv2.IMREAD_UNCHANGED)
+    #
+    # tileset_img = np.asarray(cv2.cvtColor(tileset_img, cv2.COLOR_BGR2RGB))  # HWC
+    # spritesheet_img = np.asarray(cv2.cvtColor(spritesheet_img, cv2.COLOR_BGR2RGB))
+    tileset_img = np.array(Image.open(path_tileset))
+    spritesheet_img = np.array(Image.open(path_spritesheet))
 
-    return torch.from_numpy(path_map_img), torch.from_numpy(path_sprite_img)
-#update
+    tileset_img = np.transpose(tileset_img, (2, 0, 1))  # CHW
+    spritesheet_img = np.transpose(spritesheet_img, (2, 0, 1))  # CHW
+
+    return torch.from_numpy(tileset_img), torch.from_numpy(spritesheet_img)
+
 
 # return a matching number ranging from 0 to 27
 def lookup(x):
@@ -174,30 +344,57 @@ def save_txt(lines, filename, dst_dir):
     
     return: (h,w,3)
 '''
-def better_visualize(tensor, map, sprite):
+
+
+def better_visualize(tensor, tileset, spritesheet):
     shape = tensor.shape
     h, w = shape[-2], shape[-1]
     tile_h, tile_w = 16, 16
-    new_tensor = torch.round(tensor.mul(0.5).add(0.5).mul(len(REV_LOOKUP_TABLE)-1)).type(torch.uint8).squeeze()
-    target = torch.zeros((3, h * tile_h, w * tile_w), dtype=torch.uint8)  # RGB CHW
+    # new_tensor: value range (0,133)
+    new_tensor = torch.round(tensor.mul(0.5).add(0.5).mul(NUM_OF_OBJS)).type(torch.uint8).squeeze()
+    # initialize with background color
+    target = torch.ones((3, h * tile_h, w * tile_w), dtype=torch.uint8) * torch.tensor(BG_COLOR_RGB).reshape(3,1,1)  # RGB CHW
 
     for row in range(h):
         for col in range(w):
-            pos, is_map = get_pos(new_tensor[row][col].item())
+            # tstart_y: target image's starting point of y coordinate
             tstart_y = row * tile_h
-            tend_y = tstart_y + tile_h
             tstart_x = col * tile_w
-            tend_x = tstart_x + tile_w
-            start_y = pos[0] * tile_h
-            end_y = start_y + tile_h
-            start_x = pos[1] * tile_w
-            end_x = start_x + tile_w
-            target[:, tstart_y:tend_y, tstart_x:tend_x] = map[:, start_y:end_y, start_x:end_x] if is_map else sprite[:, start_y:end_y, start_x:end_x]
+            info = get_frame(new_tensor[row][col].item()-1)
+            ts_alpha = tileset[3,:,:]
+            ss_alpha = spritesheet[3,:,:]
+            # ts_transparent =
+            # ss_transparent =
+            if info is not None:
+                # y: row  x: column
+                frame, is_tile, name = info
+
+                # source start row(column), tileset and spritesheet's starting point of row(column)
+                start_y = frame['y'] * tile_h
+                start_x = frame['x'] * tile_w
+
+                # source end row(column), according to the element's height(width) and the bounds
+                if tstart_y + frame['height'] * tile_h > target.shape[1]:
+                    end_y = start_y + (target.shape[1] - tstart_y)
+                else:
+                    end_y = start_y + frame['height'] * tile_h
+                if tstart_x + frame['width'] * tile_w > target.shape[2]:
+                    end_x = start_x + (target.shape[2] - tstart_x)
+                else:
+                    end_x = start_x + frame['width'] * tile_w
+
+                # target end row(column), according to the element's height(width) and the bounds
+                tend_y = min(target.shape[1], tstart_y + frame['height'] * tile_h)
+                tend_x = min(target.shape[2], tstart_x + frame['width'] * tile_w)
+
+                tile_tensor = tileset[:3, start_y:end_y, start_x:end_x] if is_tile else spritesheet[:3, start_y:end_y, start_x:end_x]
+                target[:, tstart_y:tend_y, tstart_x:tend_x] = tile_tensor
+
 
     return target
 
 
-def tensor2img(tensor, map, sprite, out_type=np.uint8, min_max=(-1, 1), nrow_=None):
+def tensor2img(tensor, tileset, spritesheet, out_type=np.uint8, min_max=(-1, 1), nrow_=None):
     '''
     Converts a torch Tensor into an image Numpy array
     Input: 4D(B,(3/1),H,W), 3D(C,H,W), or 2D(H,W), any range, RGB channel order
@@ -208,25 +405,27 @@ def tensor2img(tensor, map, sprite, out_type=np.uint8, min_max=(-1, 1), nrow_=No
 
     if n_dim == 4:
         shape = tensor.shape
-        new_tensor = torch.zeros(shape[0], 3, shape[2]*16, shape[3]*16)  # NCHW
+        new_tensor = torch.zeros(shape[0], 3, shape[2] * 16, shape[3] * 16)  # NCHW
         n_img = len(tensor)  # N
         if not nrow_:
             nrow_ = int(math.sqrt(n_img))
         for i in range(n_img):
-            new_tensor[i] = better_visualize(tensor[i], map, sprite)
+            new_tensor[i] = better_visualize(tensor[i], tileset, spritesheet)
         img_np = make_grid(new_tensor, nrow=nrow_, normalize=False).numpy()
         img_np = np.transpose(img_np, (1, 2, 0))
     elif n_dim == 3:
-        img_np = better_visualize(tensor, map, sprite).numpy()
+        img_np = better_visualize(tensor, tileset, spritesheet).numpy()
         img_np = np.transpose(img_np, (1, 2, 0))
     elif n_dim == 2:
-        img_np = better_visualize(tensor, map, sprite).numpy()
+        img_np = better_visualize(tensor, tileset, spritesheet).numpy()
     else:
         raise TypeError('Only support 4D, 3D and 2D tensor. But received with dimension: {:d}'.format(n_dim))
 
     return img_np.astype(out_type).squeeze()
 
 
+# nrow_: The # of rows for making grid
+# Unused for now
 def tensor2img2(tensor, out_type=np.uint8, min_max=(-1, 1), nrow_=None):
     '''
     Converts a torch Tensor into an image Numpy array
@@ -254,8 +453,8 @@ def tensor2img2(tensor, out_type=np.uint8, min_max=(-1, 1), nrow_=None):
     return img_np.astype(out_type).squeeze()
 
 
-def postprocess(image, map, sprite):
-    return [tensor2img(img, map, sprite) for img in image]
+def postprocess(image, tileset, spritesheet):
+    return [tensor2img(img, tileset, spritesheet) for img in image]
 
 
 def set_seed(seed, gl_seed=0):
@@ -315,13 +514,13 @@ def split_level(level_path):
     with open(level_path, 'r') as f:
         lines = f.readlines()
         level = [line.strip() for line in lines]
-    level_name = level_path[level_path.rfind('/')+1:].replace('.txt', '')
+    level_name = level_path[level_path.rfind('/') + 1:].replace('.txt', '')
     h, w = len(level), len(level[0])
-    split_num, remainder = w // 16, w % 16    # ignore remainder for now
+    split_num, remainder = w // 16, w % 16  # ignore remainder for now
     for i in range(split_num):
         splits = []
         for j in range(h):
-            split = level[j][i*16:i*16+16]
+            split = level[j][i * 16:i * 16 + 16]
             splits.append(split)
         # path = f"datasets/scenes/train/{level_name}_split{i}.txt"
         path = os.path.join(os.path.abspath('..'), f"datasets/scenes/train/{level_name}_split{i}.txt")
@@ -329,16 +528,16 @@ def split_level(level_path):
             f.writelines(line + '\n' for line in splits)
     # remainder
     if remainder != 0:
-        fill = ['-'*16 for _ in range(16)]
+        fill = ['-' * 16 for _ in range(16)]
         fill[-2] = 'X' * 16
         fill[-1] = 'X' * 16
         # start = split_num
         # end = split_num + remainder
         for j in range(16):
-            line = level[j][split_num*16:]           # remainder cols
+            line = level[j][split_num * 16:]  # remainder cols
             fill[j] = line + fill[j][remainder:]
         # path = f"datasets/scenes/train/{level_name}_split{i+1}.txt"
-        path = os.path.join(os.path.abspath('..'), f"datasets/scenes/train/{level_name}_split{i+1}.txt")
+        path = os.path.join(os.path.abspath('..'), f"datasets/scenes/train/{level_name}_split{i + 1}.txt")
         with open(path, 'w') as f:
             f.writelines(line + '\n' for line in fill)
 
@@ -349,20 +548,18 @@ def exchange_left_right(scene_path):
     with open(scene_path, 'r') as f:
         lines = f.readlines()
         scene = [line.strip() for line in lines]
-    scene_name = scene_path[scene_path.rfind('/')+1:].replace('.txt', '')
+    scene_name = scene_path[scene_path.rfind('/') + 1:].replace('.txt', '')
     h, w = len(scene), len(scene[0])
     splits = []
     for j in range(h):
-        right = scene[j][w//2:] if w % 2 == 0 else scene[j][w//2+1]
-        left = scene[j][0:w//2]
+        right = scene[j][w // 2:] if w % 2 == 0 else scene[j][w // 2 + 1]
+        left = scene[j][0:w // 2]
         split = right + left
         splits.append(split)
     path = os.path.join(os.path.abspath('..'), f"datasets/scenes/train/{scene_name}_rl.txt")
     with open(path, 'w') as f:
         f.writelines(line + '\n' for line in splits)
 
-
 # abspath = os.path.abspath('..')
 # split_level(os.path.join(abspath, 'datasets/levels/lvl-1.txt'))
 # exchange_left_right(os.path.join(abspath, 'datasets/scenes/train/000000000001_0.txt'))
-

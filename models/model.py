@@ -4,7 +4,7 @@ from core.base_model import BaseModel
 from core.logger import LogTracker
 import copy
 import data.util.panorama as panorama
-import numpy as np
+# import numpy as np
 
 
 class EMA():
@@ -148,29 +148,19 @@ class Palette(BaseModel):
                 if self.iter > self.ema_scheduler['ema_start'] and self.iter % self.ema_scheduler['ema_iter'] == 0:
                     self.EMA.update_model_average(self.netG_EMA, self.netG)
 
-        self.sample(train_data, self.get_cond(theme=0))
-        # self.gen_panorama(input=panorama.gen_rand_input(), iter=5)
+        # self.sample(train_data, self.get_cond(theme=0))
+        self.gen_panorama(input=panorama.gen_rand_input(), iter=5, cond=self.get_cond(theme=0))
 
         for scheduler in self.schedulers:
             scheduler.step()
         return self.train_metrics.result()
 
     def get_cond(self, theme=None, gamestyle=None, difficulty=None):
-        # cond_theme = torch.zeros((10,), dtype=torch.long)
-        # cond_gs = torch.zeros((5,), dtype=torch.long)
-        # cond_df = torch.zeros((4,), dtype=torch.long)
-        # if theme is not None:
-        #     cond_theme[theme] = 1
-        # if gamestyle is not None:
-        #     cond_gs[gamestyle] = 1
-        # if difficulty is not None:
-        #     cond_df[difficulty] = 1
         cond_theme = theme if theme is not None else -1
         cond_gs = gamestyle if gamestyle is not None else -1
         cond_df = difficulty if difficulty is not None else -1
 
         cond = torch.tensor([[cond_theme], [cond_df], [cond_gs]]).long()
-        # cond = (torch.ones(1) * theme).long()
         return cond
 
     def sample(self, data, label):
@@ -204,7 +194,7 @@ class Palette(BaseModel):
                     else:
                         self.output, self.visuals = self.netG.restoration(self.cond_image, sample_num=self.sample_num)
 
-                self.writer.save_images(self.save_current_results(), filename=self.path[0])
+                self.writer.save_images(self.save_current_results(), self.tileset, self.spritesheet, filename=self.path[0])
         self.logger.info("\n\n\n------------------------------Sampling End------------------------------")
 
     def val_step(self):
@@ -298,21 +288,21 @@ class Palette(BaseModel):
             self.save_network(network=self.netG_EMA, network_label=netG_label+'_ema')
         self.save_training_state()
 
-    def uncrop(self, data, iter):
-        self.set_input(data)
+    def uncrop(self, data, iter, label=None):
+        self.set_input(data, label)
         self.output, self.visuals = self.netG.restoration(self.cond_image,
                                                       y_t=self.cond_image,
                                                       y_0=self.gt_image, mask=self.mask,
-                                                      sample_num=self.sample_num)
+                                                      sample_num=self.sample_num, label=self.label)
 
-        self.writer.save_images(self.save_iter_results(iter), self.map, self.sprite)
+        self.writer.save_images(self.save_iter_results(iter), self.tileset, self.spritesheet)
         return self.output
 
     # return (16, 0.5+0.5*iter*width) tensor
-    def left_uncrop(self, start, iter, filename):
+    def left_uncrop(self, start, iter, filename, cond=None):
         res = torch.squeeze(start["gt_image"])[:, 8:]
         for i in range(iter):
-            ret = torch.squeeze(self.uncrop(start, i))   # tensor
+            ret = torch.squeeze(self.uncrop(start, i, cond))   # tensor
             res = torch.cat((ret[:, 0:8], res), 1)       # tensor
             self.cur_panorama[:, self.center_start-(i+1)*8:self.center_start-i*8] = ret[:, 0:8]
             self.progress = torch.cat((self.progress, self.cur_panorama[None, None]), dim=0)
@@ -320,22 +310,25 @@ class Palette(BaseModel):
         return res
 
     # return (16, 0.5+0.5*iter*width) tensor
-    def right_uncrop(self, start, iter, filename):
+    def right_uncrop(self, start, iter, filename, cond=None):
         res = torch.squeeze(start["gt_image"])[:, 0:8]
         for i in range(iter):
-            ret = torch.squeeze(self.uncrop(start, i+iter))
+            ret = torch.squeeze(self.uncrop(start, i+iter, cond))
             res = torch.cat((res, ret[:, 8:]), 1)
             self.cur_panorama[:, self.center_end+i*8:self.center_end+(i+1)*8] = ret[:, 0:8]
             self.progress = torch.cat((self.progress, self.cur_panorama[None, None]), dim=0)
             start = panorama.gen_starting_point((res[:, -16:], filename), is_left=False)
         return res
 
+    def panorama(self, cond=None):
+        self.gen_panorama(input=panorama.gen_rand_input(), iter=5, cond=cond)
+
     '''
     input: tuple(16x16 ndarray, filename)
     iter: number of iteration      
     '''
-    def gen_panorama(self, input, iter=5):
-        ndarray = input[0]   # (16,16) ndarray ranging from [0,27]
+    def gen_panorama(self, input, iter=5, cond=None):
+        ndarray = input[0]   # (16,16,1) ndarray ranging from [0,27]
         filename = input[1].replace(".txt", "")
         size = ndarray.shape              # WARNING: only works when height and width are the same and even
         h, w = size[0], size[1]
@@ -357,10 +350,10 @@ class Palette(BaseModel):
 
         self.netG.eval()
         with torch.no_grad():
-            left = self.left_uncrop(lstart, iter, filename)
-            right = self.right_uncrop(rstart, iter, filename)
+            left = self.left_uncrop(lstart, iter, filename, cond)
+            right = self.right_uncrop(rstart, iter, filename, cond)
         res = torch.torch.cat((left, right), 1)               # [-1.0, 1.0] complete level of size 16, (iter+1)*16
-        self.writer.save_panorama(raw_input, res[None], self.progress, self.map, self.sprite)
+        self.writer.save_panorama(raw_input, res[None], self.progress, self.tileset, self.spritesheet)
 
 
 

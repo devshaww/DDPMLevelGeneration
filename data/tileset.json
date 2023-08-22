@@ -1,0 +1,62 @@
+{
+    "block": {
+        "x": 82,
+        "y": 16,
+        "width": 1,
+        "height": 1
+    },
+    "question_block": {
+        "x": 15,
+        "y": 80,
+        "width": 1,
+        "height": 1
+    },
+    "hard_block": {
+        "x": 0,
+        "y": 6,
+        "width": 1,
+        "height": 1
+    },
+    "ground": {
+        "x": 7,
+        "y": 12,
+        "width": 1,
+        "height": 1
+    },
+    "coin": {
+        "x": 0,
+        "y": 7,
+        "width": 1,
+        "height": 1
+    },
+    "pipe": {
+        "x": 0,
+        "y": 14,
+        "width": 2,
+        "height": 2
+    },
+    "mushroom_platform": {
+        "x": 4,
+        "y": 4,
+        "width": 3,
+        "height": 3
+    },
+    "cloud": {
+        "x": 6,
+        "y": 6,
+        "width": 1,
+        "height": 1
+    },
+    "hidden_block": {
+        "x": 0,
+        "y": 5,
+        "width": 1,
+        "height": 1
+    },
+    "lakitu_cloud": {
+        "x": 6,
+        "y": 6,
+        "width": 1,
+        "height": 1
+    },
+}

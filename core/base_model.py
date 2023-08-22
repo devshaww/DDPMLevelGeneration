@@ -33,7 +33,7 @@ class BaseModel():
         ''' logger to log file, which only work on GPU 0. writer to tensorboard and result file '''
         self.logger = logger
         self.writer = writer
-        self.map, self.sprite = Util.read_tileset()
+        self.tileset, self.spritesheet = Util.read_template()
         self.results_dict = CustomResult([],[]) # {"name":[], "result":[]}
 
     def train(self):
@@ -54,7 +54,8 @@ class BaseModel():
             
             if self.epoch % self.opt['train']['save_checkpoint_epoch'] == 0:
                 self.logger.info('Saving the self at the end of epoch {:.0f}'.format(self.epoch))
-                self.panorama()
+                # self.panorama()
+                self.panorama(self.get_cond(theme=0))
                 self.save_everything()
 
             # if self.epoch % self.opt['train']['val_epoch'] == 0:
@@ -74,6 +75,10 @@ class BaseModel():
     @abstractmethod
     def panorama(self):
         raise NotImplementedError('You must specify how to generate panorama.')
+
+    @abstractmethod
+    def get_cond(self):
+        raise NotImplementedError('You must specify how to form condition.')
 
     @abstractmethod
     def train_step(self):

@@ -99,7 +99,5 @@ def my_collate(batch):
 
     ret_levels["path"] = paths
     # conds = torch.stack(conds, dim=1).squeeze(0)
-    print("conds before t: ", conds)
     conds = torch.stack(conds, dim=0).t()
-    print("conds after t", conds)
     return ret_levels, conds
