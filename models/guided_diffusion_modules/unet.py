@@ -397,21 +397,18 @@ class UNet(nn.Module):
 
         # if num_classes is not None:
         #     self.label_emb = nn.Embedding(num_classes, cond_embed_dim)    # size: num_classes x 256
-        if num_theme is not None:
-            self.theme_emb = nn.Embedding(num_theme, cond_embed_dim)
-        if num_difficulty is not None:
-            self.diff_emb = nn.Embedding(num_difficulty, cond_embed_dim)
-        if num_gamestyle is not None:
-            self.gs_emb = nn.Embedding(num_gamestyle, cond_embed_dim)
+        self.theme_emb = nn.Embedding(num_theme, cond_embed_dim) if num_theme is not None else None
+        self.diff_emb = nn.embedding(num_difficulty, cond_embed_dim) if num_difficulty is not None else None
+        self.gs_emb = nn.embedding(num_gamestyle, cond_embed_dim) if num_gamestyle is not None else None
 
-        ch = input_ch = int(channel_mults[0] * inner_channel)   # int(1 * 4) = 4   before: 64
+        ch = input_ch = int(channel_mults[0] * inner_channel)   # 64
         self.input_blocks = nn.ModuleList(
             [EmbedSequential(nn.Conv2d(in_channel, ch, 3, padding=1))]
         )
         self._feature_size = ch
         input_block_chans = [ch]
         ds = 1
-        for level, mult in enumerate(channel_mults):
+        for level, mult in enumerate(channel_mults):  # 1 2 4 8
             for _ in range(res_blocks):
                 layers = [
                     ResBlock(
@@ -423,7 +420,7 @@ class UNet(nn.Module):
                         use_scale_shift_norm=use_scale_shift_norm,
                     )
                 ]
-                ch = int(mult * inner_channel)
+                ch = int(mult * inner_channel)  # 64 128 256 512
                 if ds in attn_res:
                     layers.append(
                         AttentionBlock(

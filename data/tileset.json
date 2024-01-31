@@ -5,6 +5,36 @@
         "width": 1,
         "height": 1
     },
+    "donut_block": {
+        "x": 0,
+        "y": 4,
+        "width": 1,
+        "height": 1
+    },
+    "ice_block": {
+        "x": 8,
+        "y": 7,
+        "width": 1,
+        "height": 1
+    },
+    "bridge": {
+        "x": 1,
+        "y": 2,
+        "width": 1,
+        "height": 2
+    },
+    "bridge_left": {
+        "x": 0,
+        "y": 2,
+        "width": 1,
+        "height": 2
+    },
+    "bridge_right": {
+        "x": 2,
+        "y": 2,
+        "width": 1,
+        "height": 2
+    },
     "question_block": {
         "x": 2,
         "y": 0,
@@ -32,8 +62,32 @@
     "pipe": {
         "x": 14,
         "y": 0,
-        "width": 2,
-        "height": 2
+        "width": 1,
+        "height": 1
+    },
+    "pipe_head_left": {
+        "x": 14,
+        "y": 0,
+        "width": 1,
+        "height": 1
+    },
+    "pipe_head_right": {
+        "x": 15,
+        "y": 0,
+        "width": 1,
+        "height": 1
+    },
+    "pipe_body_left": {
+        "x": 14,
+        "y": 1,
+        "width": 1,
+        "height": 1
+    },
+    "pipe_body_right": {
+        "x": 15,
+        "y": 1,
+        "width": 1,
+        "height": 1
     },
     "mushroom_platform": {
         "x": 4,
@@ -41,21 +95,81 @@
         "width": 1,
         "height": 1
     },
-    "cloud": {
+    "mushroom_platform_head_left": {
+        "x": 3,
+        "y": 4,
+        "width": 1,
+        "height": 1
+    },
+    "mushroom_platform_head_mid": {
+        "x": 4,
+        "y": 4,
+        "width": 1,
+        "height": 1
+    },
+    "mushroom_platform_head_right": {
+        "x": 5,
+        "y": 4,
+        "width": 1,
+        "height": 1
+    },
+    "mushroom_platform_stem_head": {
         "x": 6,
-        "y": 6,
+        "y": 3,
+        "width": 1,
+        "height": 1
+    },
+    "mushroom_platform_stem_body": {
+        "x": 6,
+        "y": 4,
+        "width": 1,
+        "height": 1
+    },
+    "semisolid_platform": {
+        "x": 8,
+        "y": 3,
+        "width": 1,
+        "height": 1
+    },
+    "semisolid_platform_head_left": {
+        "x": 7,
+        "y": 3,
+        "width": 1,
+        "height": 1
+    },
+    "semisolid_platform_head_mid": {
+        "x": 8,
+        "y": 3,
+        "width": 1,
+        "height": 1
+    },
+    "semisolid_platform_head_right": {
+        "x": 9,
+        "y": 3,
+        "width": 1,
+        "height": 1
+    },
+    "semisolid_platform_body_left": {
+        "x": 8,
+        "y": 4,
+        "width": 1,
+        "height": 1
+    },
+    "semisolid_platform_body_mid": {
+        "x": 9,
+        "y": 4,
+        "width": 1,
+        "height": 1
+    },
+    "semisolid_platform_body_right": {
+        "x": 10,
+        "y": 4,
         "width": 1,
         "height": 1
     },
     "hidden_block": {
         "x": 5,
         "y": 0,
-        "width": 1,
-        "height": 1
-    },
-    "lakitu_cloud": {
-        "x": 6,
-        "y": 6,
         "width": 1,
         "height": 1
     }

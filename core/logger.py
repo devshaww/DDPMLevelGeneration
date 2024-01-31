@@ -6,6 +6,7 @@ import logging
 import pandas as pd
 import pdb
 import core.util as Util
+import torch
 
 class InfoLogger():
     """
@@ -99,22 +100,28 @@ class VisualWriter():
         self.iter = iter
     
 
-    def save_panorama(self, raw_input, res, progress, tileset, spritesheet, suffix):
-        # res: (1, h, w)
+    def save_panorama(self, raw_input, res, progress, tileset, spritesheet, suffix, evaluate):
+        # res: (c, h, w*6)
         path = os.path.join(self.result_dir, str(self.epoch))
         os.makedirs(path, exist_ok=True)
-        filename = raw_input["path"][0]
-        gt = raw_input["gt_image"][0]
+        filenames = raw_input["path"]
+        gt = raw_input["gt_image"]   # (n,c,h,w)
+        sample_batch_size = len(filenames)
+        print(f"sample_batch_size: {sample_batch_size}")
 
         try:
             # txt = Util.tensor2txt(res)
             # Util.save_txt(txt, filename, path)
-            progress_img = Util.tensor2img(progress, tileset, spritesheet, nrow_=1)
-            gt_img = Util.tensor2img(gt, tileset, spritesheet)
-            panoram_img = Util.tensor2img(res, tileset, spritesheet)
-            Image.fromarray(panoram_img).save(os.path.join(path, f"panorama{suffix}.jpg"))
-            Image.fromarray(gt_img).save(os.path.join(path, filename + "_gt.jpg"))
-            Image.fromarray(progress_img).save(os.path.join(path, f"progress{suffix}.jpg"))
+            for i in range(len(filenames)):
+                filename = filenames[i]
+                if not evaluate:
+                    progress_img = Util.tensor2img(progress[i::sample_batch_size], tileset, spritesheet, nrow_=1)
+                    gt_img = Util.tensor2img(gt[i], tileset, spritesheet)
+                    Image.fromarray(gt_img).save(os.path.join(path, filename + f"{i}_gt.jpg"))
+                    Image.fromarray(progress_img).save(os.path.join(path, f"{i}_progress{suffix}.jpg"))
+                panorama_img = Util.tensor2img(res[i], tileset, spritesheet)
+                Image.fromarray(panorama_img).save(os.path.join(path, f"{i}_panorama{suffix}.jpg"))
+                
         except:
             raise NotImplementedError('You must specify the context of name and result in save_current_results functions of model.')
 

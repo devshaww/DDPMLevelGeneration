@@ -10,16 +10,17 @@
         "tb_logger": "tb_logger", // path of tensorboard logger
         "results": "results",
         "checkpoint": "checkpoint",
-        // "resume_state": "experiments/inpainting_places2_220413_143231/checkpoint/25"
-        "resume_state": null  // ex: 100, loading .state  and .pth from given epoch and iteration
+        // "resume_state": "experiments/train_uncropping_scenes_231217_142221/checkpoint/298" : 小数据集 split 10
+        // "experiments/train_uncropping_scenes_240102_150550/checkpoint/300" : 大数据集 split 10
+        "resume_state": "experiments/train_uncropping_scenes_240112_170621/checkpoint/298"  // ex: 100, loading .state  and .pth from given epoch and iteration
     },
 
     "datasets": { // train or test
         "train": {
             "which_dataset": {  // import designated dataset using arguments
-                "name": ["data.dataset", "UncroppingLevelDataset"], // import Dataset() class / function(not recommend) from data.dataset.py (default is [data.dataset.py])
+                "name": ["data.dataset", "UncroppingTextDataset"], // import Dataset() class / function(not recommend) from data.dataset.py (default is [data.dataset.py])
                 "args":{ // arguments to initialize dataset
-                    "data_root": "datasets/smm2/filtered_1.parquet",
+                    "data_root": "datasets/scenes/flist/train2.flist",
                     "data_len": -1,
                     "mask_config": {
                         "mask_mode": "vertical" // onedirection | fourdirection | hybrid | manual
@@ -27,16 +28,16 @@
                 }
             },
             "dataloader":{
-                "validation_split": 2, // percent or number
+                "validation_split": 0.001, // percent or number
                 "args":{ // arguments to initialize train_dataloader
-                    "batch_size": 16, // batch size in each gpu
+                    "batch_size": 128, // batch size in each gpu
                     "num_workers": 4,
                     "shuffle": true,
                     "pin_memory": true,
                     "drop_last": true
                 },
                 "val_args":{ // arguments to initialize valid_dataloader, will overwrite the parameters in train_dataloader
-                    "batch_size": 1, // batch size in each gpu
+                    "batch_size": 10, // batch size in each gpu
                     "num_workers": 4,
                     "shuffle": false,
                     "pin_memory": true,
@@ -88,8 +89,8 @@
                     "init_type": "kaiming", // method can be [normal | xavier| xavier_uniform | kaiming | orthogonal], default is kaiming
                     "module_name": "guided_diffusion", // sr3 | guided_diffusion
                     "unet": {
-                        "in_channel": 2,
-                        "out_channel": 1,
+                        "in_channel": 38,
+                        "out_channel": 19,
                         "inner_channel": 64,   // before: 64
                         "channel_mults": [
                             1,
@@ -106,10 +107,10 @@
                         "res_blocks": 2,
                         "dropout": 0.2,
                         //"image_size": 256
-                        "image_size": 16,
-			"num_theme": 10,
-			"num_difficulty": 4,
-			"num_gamestyle": 5	
+                        "image_size": 16
+                        //"num_theme": 10,
+                        //"num_difficulty": 4,
+                        //"num_gamestyle": 5	
                     },
                     "beta_schedule": {
                         "train": {
@@ -148,9 +149,10 @@
         "n_epoch": 300, // max epochs, not limited now
         "n_iter": 1e8, // max interations
         "val_epoch": 1, // valdation every specified number of epochs
-        "save_checkpoint_epoch": 50,
+        "save_checkpoint_epoch": 100,
         "log_iter": 1e4, // log every specified number of iterations
-        "tensorboard" : true // tensorboardX enable
+        "tensorboard" : true, // tensorboardX enable
+        "evaluation": false
     },
 
     "debug": { // arguments in debug mode, which will replace arguments in train

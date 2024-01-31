@@ -8,6 +8,8 @@ import torch.nn as nn
 import pdb
 
 import core.util as Util
+from data.dataset import RANDOM_LEVELS
+from data.dataset import RANDOM_LEVELS_EVALUATION
 CustomResult = collections.namedtuple('CustomResult', 'name result')
 
 class BaseModel():
@@ -52,22 +54,35 @@ class BaseModel():
             for key, value in train_log.items():
                 self.logger.info('{:5s}: {}\t'.format(str(key), value))
             
-            if self.epoch % self.opt['train']['save_checkpoint_epoch'] == 0:
-                self.logger.info('Saving the self at the end of epoch {:.0f}'.format(self.epoch))
-                #self.panorama()
-                self.panorama(self.get_cond(theme=0, difficulty=0))
-                self.panorama(self.get_cond(theme=0, difficulty=2))
-                self.save_everything()
+            # evaluation
+            if self.opt['train']['evaluation']:
+                if self.epoch % self.opt['train']['save_checkpoint_epoch'] == 0 or self.epoch == 1:
+                    self.panorama(RANDOM_LEVELS_EVALUATION, evaluate=True)
+                if self.epoch % self.opt['train']['save_checkpoint_epoch'] == 0 or self.epoch == self.opt['train']['n_epoch'] - 2:
+                    self.save_everything()
+            else:
+                # generation
+                if self.epoch == 1 or self.epoch % self.opt['train']['save_checkpoint_epoch'] == 0:
+                    self.logger.info('Saving the self at the end of epoch {:.0f}'.format(self.epoch))
+                    i = 0 if self.epoch == 1 else self.epoch // self.opt['train']['save_checkpoint_epoch']
+                    # level = RANDOM_LEVELS[i]
+                    self.panorama(RANDOM_LEVELS)
+                    # self.panorama(RANDOM_LEVELS_EVALUATION)
+                    # self.panorama([RANDOM_LEVELS[i]])
+                    # self.panorama(self.get_cond(theme=0, difficulty=2))
+                    self.save_everything()
+                elif self.epoch == self.opt['train']['n_epoch'] - 2 or self.epoch % 50 == 0:
+                        self.save_everything()
             
-            #if self.epoch % self.opt['train']['val_epoch'] == 0:
-            #    self.logger.info("\n\n\n------------------------------Validation Start------------------------------")
-            #    if self.val_loader is None:
-            #        self.logger.warning('Validation stop where dataloader is None, Skip it.')
-            #    else:
-            #        val_log = self.val_step()
-            #        for key, value in val_log.items():
-            #            self.logger.info('{:5s}: {}\t'.format(str(key), value))
-            #    self.logger.info("\n------------------------------Validation End------------------------------\n\n")
+            if self.epoch == self.opt['train']['n_epoch']:
+                self.logger.info("\n\n\n------------------------------Validation Start------------------------------")
+                if self.val_loader is None:
+                    self.logger.warning('Validation stop where dataloader is None, Skip it.')
+                else:
+                    val_log = self.val_step()
+                for key, value in val_log.items():
+                    self.logger.info('{:5s}: {}\t'.format(str(key), value))
+                self.logger.info("\n------------------------------Validation End------------------------------\n\n")
         self.logger.info('Number of Epochs has reached the limit, End.')
 
     def test(self):

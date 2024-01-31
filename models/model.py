@@ -5,7 +5,11 @@ from core.logger import LogTracker
 import copy
 import pdb
 import data.util.panorama as panorama
-
+import core.util as util
+import data.util.evaluation as E
+from torchmetrics.image.fid import FrechetInceptionDistance
+from scipy.stats import wasserstein_distance
+import numpy as np
 
 class EMA():
     def __init__(self, beta=0.9999):
@@ -65,16 +69,20 @@ class Palette(BaseModel):
         
     def set_input(self, data, label=None):
         ''' must use set_device in tensor '''
-        if not label is None:
+        if label is not None:
             self.label = self.set_device(label)
+        else:
+            self.label = None
         self.cond_image = self.set_device(data.get('cond_image'))
         self.gt_image = self.set_device(data.get('gt_image'))
         self.mask = self.set_device(data.get('mask'))
         self.mask_image = data.get('mask_image')
         self.path = data['path']
-        self.batch_size = len(data['path'])
+        self.sample_batch_size = len(data['path'])
+        self.direction = data.get('direction')
 
     def get_current_visuals(self, phase='train'):
+        # all images are in range [0, 1]
         dict = {
             'gt_image': (self.gt_image.detach()[:].float().cpu()+1)/2,
             'cond_image': (self.cond_image.detach()[:].float().cpu()+1)/2,
@@ -93,15 +101,15 @@ class Palette(BaseModel):
     def save_current_results(self):
         ret_path = []
         ret_result = []
-        for idx in range(self.batch_size):
-            ret_path.append('GT_{}'.format(self.path[idx]))
+        for idx in range(self.sample_batch_size):
+            ret_path.append('Evaluation_GT_{}'.format(self.path[idx]))
             ret_result.append(self.gt_image[idx].detach().float().cpu())
 
-            ret_path.append('Process_{}'.format(self.path[idx]))
-            ret_result.append(self.visuals[idx::self.batch_size].detach().float().cpu())
+            ret_path.append('Evaluation_Process_{}'.format(self.path[idx]))
+            ret_result.append(self.visuals[idx::self.sample_batch_size].detach().float().cpu())
             
-            ret_path.append('Out_{}'.format(self.path[idx]))
-            ret_result.append(self.visuals[idx-self.batch_size].detach().float().cpu())
+            ret_path.append('Evaluation_Out_{}'.format(self.path[idx]))
+            ret_result.append(self.visuals[idx-self.sample_batch_size].detach().float().cpu())
         
         #if self.task in ['inpainting','uncropping']:
         #    ret_path.extend(['Mask_{}'.format(name) for name in self.path])
@@ -113,15 +121,15 @@ class Palette(BaseModel):
     def save_iter_results(self, iter):
         ret_path = []
         ret_result = []
-        for idx in range(self.batch_size):
-            ret_path.append('{}_GT'.format(iter))
+        for idx in range(self.sample_batch_size):
+            ret_path.append(f'{idx}_{iter}_GT')
             ret_result.append(self.gt_image[idx].detach().float().cpu())
 
-            ret_path.append('{}_Process'.format(iter))
-            ret_result.append(self.visuals[idx::self.batch_size].detach().float().cpu())
+            ret_path.append(f'{idx}_{iter}_Process')
+            ret_result.append(self.visuals[idx::self.sample_batch_size].detach().float().cpu())
 
-            ret_path.append('{}_Out'.format(iter))
-            ret_result.append(self.visuals[idx - self.batch_size].detach().float().cpu())
+            ret_path.append(f'{idx}_{iter}_Out')
+            ret_result.append(self.visuals[idx - self.sample_batch_size].detach().float().cpu())
 
         #if self.task in ['inpainting', 'uncropping']:
         #    ret_path.extend(['{}_Mask'.format(name) for name in self.path])
@@ -133,8 +141,8 @@ class Palette(BaseModel):
     def train_step(self):
         self.netG.train()
         self.train_metrics.reset()
-        for train_data, labels in tqdm.tqdm(self.phase_loader, desc="epoch {}".format(self.epoch)):
-            self.set_input(train_data, labels)
+        for train_data in tqdm.tqdm(self.phase_loader, desc="epoch {}".format(self.epoch)):
+            self.set_input(train_data)
             self.optG.zero_grad()
             loss = self.netG(self.gt_image, self.cond_image, mask=self.mask, label=self.label)
             loss.backward()
@@ -148,7 +156,8 @@ class Palette(BaseModel):
                     self.logger.info('{:5s}: {}\t'.format(str(key), value))
                     self.writer.add_scalar(key, value)
                 for key, value in self.get_current_visuals().items():
-                    self.writer.add_images(key, value)
+                    pass
+                    # self.writer.add_images(key, value)
             if self.ema_scheduler is not None:
                 if self.iter > self.ema_scheduler['ema_start'] and self.iter % self.ema_scheduler['ema_iter'] == 0:
                     self.EMA.update_model_average(self.netG_EMA, self.netG)
@@ -161,16 +170,10 @@ class Palette(BaseModel):
         return self.train_metrics.result()
    
     def get_cond(self, theme=None, gamestyle=None, difficulty=None):
-        #cond_theme = torch.zeros((10,), dtype=torch.long)
-        #cond_gs = torch.zeros((5,), dtype=torch.long)
-        #cond_df = torch.zeros((4,), dtype=torch.long)
         cond_theme = theme if theme is not None else -1
         cond_gs = gamestyle if gamestyle is not None else -1
         cond_df = difficulty if difficulty is not None else -1
-        #cond = torch.cat((cond_theme, cond_gs, cond_df)) # 1x19
-        # cond = (torch.ones(1)*theme).long()
         cond = torch.tensor([[cond_theme], [cond_df], [cond_gs]]).long()
-        #cond = (torch.ones(1)*theme).long()
         return cond
 
     def get_cond_dict(self, cond):
@@ -216,25 +219,13 @@ class Palette(BaseModel):
                     else:
                         self.output, self.visuals = self.netG.restoration(self.cond_image, sample_num=self.sample_num)
 
-                #suffix = ''
-                #if label is not None:
-                #    cond = label
-                #    print(cond.shape)
-                #    print(cond)
-                #    suffix = '_' 
-                #    dic = self.get_cond_dict(cond) 
-                #    for item in dic:
-                #        if item == 'theme':
-                #            suffix += f"t{dic[item]}"
-                #        elif item == 'difficulty':
-                #            suffix += f"d{dic[item]}"
-                #        elif item == 'gamestyle':
-                #            suffix += f"g{dic[item]}"
-                self.writer.save_images(self.save_current_results(), self.tileset, self.spritesheet, filename=self.path[0])
+                self.writer.save_images(self.save_current_results(), self.tileset, self.spritesheet)
         self.logger.info("\n\n\n------------------------------Sampling End------------------------------")
 
 
     def val_step(self):
+        fake_images = []
+        real_images = []
         self.netG.eval()
         self.val_metrics.reset()
         with torch.no_grad():
@@ -256,14 +247,53 @@ class Palette(BaseModel):
                 self.iter += self.batch_size
                 self.writer.set_iter(self.epoch, self.iter, phase='val')
 
-                for met in self.metrics:
-                    key = met.__name__
-                    value = met(self.gt_image, self.output)
-                    self.val_metrics.update(key, value)
-                    self.writer.add_scalar(key, value)
-                for key, value in self.get_current_visuals(phase='val').items():
-                    self.writer.add_images(key, value)
-                self.writer.save_images(self.save_current_results(),filename=self.path[0])
+                output, gt = self.output.detach().float().cpu(), self.gt_image.detach().float().cpu()
+                # fake_images.append(self.output.detach().float().cpu())  # 1x19x16x16
+                # real_images.append(self.gt_image.detach().float().cpu())
+                fake_images.append(output[:, :, :, :8] if self.direction == 'left' else output[:, :, :, 8:])
+                real_images.append(gt[:, :, :, :8] if self.direction == 'left' else gt[:, :, :, 8:])
+                # for met in self.metrics:
+                #     key = met.__name__
+                #     value = met(self.gt_image, self.output)
+                #     self.val_metrics.update(key, value)
+                #     self.writer.add_scalar(key, value)
+                # for key, value in self.get_current_visuals(phase='val').items():
+                #     self.writer.add_images(key, value)
+                self.writer.save_images(self.save_current_results(), self.tileset, self.spritesheet)
+
+            fake_images = torch.cat(fake_images, dim=0)  # Nx19x16x8
+            real_images = torch.cat(real_images, dim=0)  # Nx19x16x8
+            n, c, _, _ = fake_images.shape
+            # Wasserstein Distance
+            real_images_wd = real_images.reshape(n, c, -1) # Nx19x128
+            fake_images_wd = fake_images.reshape(n, c, -1) # Nx19x128
+            real_images_wd_argmax = torch.argmax(real_images_wd, dim=1) # Nx128
+            fake_images_wd_argmax = torch.argmax(fake_images_wd, dim=1) # Nx128
+
+            wd, wd_argmax = np.zeros((n, )), np.zeros((n, ))
+            wd_pd = np.zeros((real_images_wd.shape[-1], ))  # [128]
+            wd_pd_all = np.zeros((n, ))
+            for i in range(n):
+                wd_argmax[i] += wasserstein_distance(real_images_wd_argmax[i, :], fake_images_wd_argmax[i, :])
+                for k in range(wd_pd.shape[0]):
+                    wd_pd[k] += wasserstein_distance(real_images_wd[i, :, k], fake_images_wd[i, :, k])
+                for j in range(c):
+                    wd[i] += wasserstein_distance(real_images_wd[i, j, :], fake_images_wd[i, j, :])
+                wd_pd_all[i] = np.mean(wd_pd[k])
+            # Average the Wasserstein distances across all channels
+            average_wasserstein_distance = np.mean(wd)
+            average_wasserstein_distance_argmax = np.mean(wd_argmax)
+            average_wasserstein_distance_pd = np.mean(wd_pd_all)
+            print(f"Average Wasserstein Distance: {average_wasserstein_distance}")
+            print(f"Average Wasserstein Distance Argmax: {average_wasserstein_distance_argmax}")
+            print(f"Average Wasserstein Distance Probability Add To 1: {average_wasserstein_distance_pd}")
+            # Frechet Inception Distance
+            # real_images_fid = torch.argmax(real_images, dim=1)[:, None, :].expand(-1, 3, -1, -1)
+            # fake_images_fid = torch.argmax(fake_images, dim=1)[:, None, :].expand(-1, 3, -1, -1)
+            # fid = FrechetInceptionDistance(normalize=True)
+            # fid.update(real_images_fid, real=True)
+            # fid.update(fake_images_fid, real=False)
+            # print(f"FID: {float(fid.compute())}")
 
         return self.val_metrics.result()
 
@@ -332,64 +362,81 @@ class Palette(BaseModel):
                                                       y_t=self.cond_image,
                                                       y_0=self.gt_image, mask=self.mask,
                                                       sample_num=self.sample_num, label=self.label)
-        self.writer.save_images(self.save_iter_results(iter), self.tileset, self.spritesheet)
+        # self.writer.save_images(self.save_iter_results(iter), self.tileset, self.spritesheet)
         return self.output
 
     # return (16, 0.5+0.5*iter*width) tensor
     def left_uncrop(self, start, iter, filename, cond=None):
-        res = torch.squeeze(start['gt_image'])[:, 8:]
+        res = start['gt_image'][:, :, :, 8:]  # nchw
         for i in range(iter):
-            ret = torch.squeeze(self.uncrop(start, i, cond)).detach().float().cpu()
-            res = torch.cat((ret[:, 0:8], res), 1)
-            self.cur_panorama[:, self.center_start-(i+1)*8:self.center_start-i*8] = ret[:, 0:8]
-            self.progress = torch.cat((self.progress, self.cur_panorama[None, None]), dim=0)
-            start = panorama.gen_starting_point((res[:, 0:16], filename))
+            ret = self.uncrop(start, i, cond).detach().float().cpu()  # nchw
+            res = torch.cat((ret[:, :, :, 0:8], res), dim=-1)
+            self.cur_panorama[:, :, :, self.center_start-(i+1)*8:self.center_start-i*8] = ret[:, :, :, 0:8]
+            self.progress = torch.cat((self.progress, self.cur_panorama), dim=0)
+            start = panorama.gen_starting_point((res[:, :, :, 0:16], filename))
         return res
 
     # return (16, 0.5+0.5*iter*width) tensor
     def right_uncrop(self, start, iter, filename, cond=None):
-        res = torch.squeeze(start['gt_image'])[:, 0:8]
+        res = start['gt_image'][:, :, :, 0:8]  # nchw
         for i in range(iter):
-            ret = torch.squeeze(self.uncrop(start, i+iter, cond)).detach().float().cpu()
-            res = torch.cat((res, ret[:, 8:]), 1)
-            self.cur_panorama[:, self.center_end+i*8:self.center_end+(i+1)*8] = ret[:, 0:8]
-            self.progress = torch.cat((self.progress, self.cur_panorama[None, None]), dim=0)
-            start = panorama.gen_starting_point((res[:, -16:], filename), is_left=False)
+            ret = self.uncrop(start, iter+i, cond).detach().float().cpu()  # nchw
+            res = torch.cat((res, ret[:, :, :, 8:]), dim=-1)
+            self.cur_panorama[:, :, :, self.center_end+i*8:self.center_end+(i+1)*8] = ret[:, :, :, 8:]
+            self.progress = torch.cat((self.progress, self.cur_panorama), dim=0)
+            start = panorama.gen_starting_point((res[:, :, :, -16:], filename), is_left=False)
+
         return res
         
-    def panorama(self, cond=None):
-        self.gen_panorama(input=panorama.gen_rand_input(), iter=5, cond=cond)
+    # i is the index of RANDOM_LEVELS, also indicates the index of sample
+    def panorama(self, level, cond=None, evaluate=False):
+        self.gen_panorama(input=panorama.gen_rand_input(level), evaluate=evaluate, cond=cond)
 
 
     '''
-    input: tuple(16x16 ndarray, filename)
+    input: tuple(nchw tensor, filename)
     iter: number of iteration      
     '''
-    def gen_panorama(self, input, iter=5, cond=None):
-        ndarray = input[0]  # (16,16,1) ndarray
-        filename = input[1].replace(".txt", "")
-        size = ndarray.shape              # WARNING: only works when height and width are the same and even
-        h, w = size[0], size[1]
+    def gen_panorama(self, input, evaluate, cond=None, iter=5):
+        # ndarray = input[0]  # (16,16,1) ndarray
+        tensor = input[0]   # (n,c,h,w) float tensor
+        n = tensor.shape[0]
+        filenames = input[1]
+        # size = ndarray.shape              # WARNING: only works when height and width are the same and even
+        h, w = tensor.shape[-2], tensor.shape[-1]
 
         # dicts
         raw_input = panorama.gen_starting_point(input, is_origin=True)    # input data
-        lstart = panorama.gen_starting_point((raw_input['gt_image'], filename), is_left=True)         # left uncrop start
-        rstart = panorama.gen_starting_point((raw_input['gt_image'], filename), is_left=False)        # right uncrop start
+        lstart = panorama.gen_starting_point((raw_input['gt_image'], filenames), is_left=True)         # left uncrop start
+        rstart = panorama.gen_starting_point((raw_input['gt_image'], filenames), is_left=False)        # right uncrop start
 
         # store panorama generation progress, should have 2*iter elements
-        self.cur_panorama = torch.ones(h, (iter+1)*w) * (-1.0)
+        # self.cur_panorama = torch.ones(h, (iter+1)*w) * (-1.0)   # 16 x full width
+        self.cur_panorama = torch.ones(n, util.NUM_OF_OBJS, h, (iter+1)*w) * (-1.0)   # n,c,16,96
+        # self.cur_panorama[-1, :, :] = 1.0
+        self.cur_panorama[:, 0, :, :] = 1
 
         # initialze input at center
         self.center_start = int(0.5*w*iter)
         self.center_end = self.center_start + w
-        self.cur_panorama[:, self.center_start:self.center_end] = torch.squeeze(raw_input['gt_image'])[:]
-        self.progress = self.cur_panorama[None, None]
+        # self.cur_panorama[:, self.center_start:self.center_end] = torch.squeeze(raw_input['gt_image'])[:]   # 16,16
+        # self.progress = self.cur_panorama[None, None]   # 1,1,16,16
+        self.cur_panorama[:, :, :, self.center_start:self.center_end] = raw_input['gt_image']    # n,c,16,16
+        self.progress = self.cur_panorama.clone()
 
         self.netG.eval()
         with torch.no_grad():
-            left = self.left_uncrop(lstart, iter, filename, cond)
-            right = self.right_uncrop(rstart, iter, filename, cond)
-        res = torch.torch.cat((left, right), 1)
+            left = self.left_uncrop(lstart, iter, filenames, cond)
+            right = self.right_uncrop(rstart, iter, filenames, cond)
+        res = torch.cat((left, right), dim=-1)   # (c, h, w*6)
+        
+        # Evaluation
+        if evaluate:
+            edit_distance_val = E.compute_edit_distance(res, is_tensor=True)
+            E.update_csv('this', 'edit_distance', edit_distance_val)
+            playability_val = E.compute_playability(res)
+            E.update_csv('this', 'playability', playability_val)
+
         suffix = ''
         if cond is not None:
             suffix = '_'
@@ -401,4 +448,5 @@ class Palette(BaseModel):
                     suffix += f"d{dic[item]}"
                 elif item == 'gamestyle':
                     suffix += f"g{dic[item]}"
-        self.writer.save_panorama(raw_input, res[None], self.progress, self.tileset, self.spritesheet, suffix=suffix)      
+        # self.writer.save_panorama(raw_input, res[None], self.progress, self.tileset, self.spritesheet, suffix=suffix)
+        self.writer.save_panorama(raw_input, res, self.progress, self.tileset, self.spritesheet, suffix=suffix, evaluate=evaluate)

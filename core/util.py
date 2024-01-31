@@ -25,154 +25,117 @@ REV_LOOKUP_TABLE = {0: '-', 1: '#', 2: 'S', 3: 'C', 4: 'L', 5: 'U',
                     11: 't', 12: 'T', 13: '*', 14: 'g', 15: 'G',
                     16: 'r', 17: 'R', 18: 'k', 19: 'K', 20: 'y', 21: 'Y', 22: 'X', 23: 'B', 24: 'b'}
 
-NUM_OF_OBJS = 133
+NUM_OF_OBJS_backup = 13
+NUM_OF_OBJS = 19
 
 BG_COLOR_RGB = [99, 144, 255]
 
-tile_pos_dict = {0: (5, 2), 1: (0, 2), 2: (0, 7), 3: (0, 7), 4: (0, 7), 5: (0, 7), 6: (1, 0), 7: (1, 0),
-                 8: (1, 6), 9: (1, 6), 10: (1, 7), 11: (6, 4), 12: (6, 4), 22: (0, 1), 25: (0, 0)}
+# (row, column)
+# pipe: (single)13 15  bullet_bill_blaster: 19  semisolid_platform: 22
+tile_pos_dict_backup = {0: (5, 2), 1: (0, 2), 2: (0, 6), 3: (1, 0), 4: (1, 7), 5: (6, 4), 6: (0, 3), 7: (5, 7),
+                 8: (5, 3), 9: (0, 1), 13: (6, 4), 14: (6, 5), 15: (2, 2), 16: (2, 3), 17: (2, 4), 18: (2, 5),
+                 19: (0, 3), 20: (0, 4), 21: (0, 5), 22: (5, 3), 23: (5, 4), 24: (5, 5), 25: (5, 6)}
 
-sprite_pos_dict = {13: (11, 0), 14: (5, 0), 15: (5, 0), 16: (3, 3), 17: (3, 3), 18: (3, 3), 19: (3, 3), 23: (11, 0),
-                   24: (11, 0), 20: (7, 0), 21: (7, 0)}
+# 4,5 invisible block   16开始全部+3 16-
+tile_pos_dict = {0: (5, 2), 1: (0, 2), 2: (0, 6), 3: (0, 6), 4: (0, 6), 5: (0, 6), 6: (0, 6), 7: (0, 6), 8: (1, 0), 9: (1, 0), 10: (1, 7), 11: (6, 4), 
+                 12: (0, 3), 13: (5, 7), 14: (5, 3), 15: (0, 1), 19: (6, 4), 20: (6, 5), 21: (2, 2), 22: (2, 3), 23: (2, 4), 24: (2, 5), 25: (0, 3),
+                 26: (0, 4), 27: (0, 5), 28: (5, 3), 29: (5, 4), 30: (5, 5), 31: (5, 6)}
 
+                #  13: (6, 4), 14: (6, 5), 15: (2, 2), 16: (2, 3), 17: (2, 4), 18: (2, 5),
+                #  19: (0, 3), 20: (0, 4), 21: (0, 5), 22: (5, 3), 23: (5, 4), 24: (5, 5), 25: (5, 6)}
 
-# map id value to string name to find its position
-enum_reverse_mapping = {
-    0: "goomba",
-    1: "koopa",
-    2: "piranha_flower",
-    3: "hammer_bro",
-    4: "block",
-    5: "question_block",
-    6: "hard_block",
-    7: "ground",
-    8: "coin",
-    9: "pipe",
-    10: "spring",
-    11: "lift",
-    12: "thwomp",
-    13: "bullet_bill_blaster",
-    14: "mushroom_platform",
-    15: "bob_omb",
-    16: "semisolid_platform",
-    17: "bridge",
-    18: "p_switch",
-    19: "pow",
-    20: "super_mushroom",
-    21: "donut_block",
-    22: "cloud",
-    23: "note_block",
-    24: "fire_bar",
-    25: "spiny",
-    26: "goal_ground",
-    27: "goal",
-    28: "buzzy_beetle",
-    29: "hidden_block",
-    30: "lakitu",
-    31: "lakitu_cloud",
-    32: "banzai_bill",
-    33: "one_up",  # mushroom get from block
-    34: "fire_flower",
-    35: "super_star",
-    36: "lava_lift",
-    37: "starting_brick",
-    38: "starting_arrow",
-    39: "magikoopa",
-    40: "spike_top",
-    41: "boo",
-    42: "clown_car",
-    43: "spikes",
-    44: "big_mushroom",
-    45: "shoe_goomba",
-    46: "dry_bones",
-    47: "cannon",
-    48: "blooper",
-    49: "castle_bridge",
-    50: "jumping_machine",
-    51: "skipsqueak",
-    52: "wiggler",
-    53: "fast_conveyor_belt",
-    54: "burner",
-    55: "door",
-    56: "cheep_cheep",
-    57: "muncher",
-    58: "rocky_wrench",
-    59: "track",
-    60: "lava_bubble",
-    61: "chain_chomp",
-    62: "bowser",
-    63: "ice_block",
-    64: "vine",
-    65: "stingby",
-    66: "arrow",
-    67: "one_way",
-    68: "saw",
-    69: "player",
-    70: "big_coin",
-    71: "half_collision_platform",
-    72: "koopa_car",
-    73: "cinobio",
-    74: "spike_ball",
-    75: "stone",
-    76: "twister",
-    77: "boom_boom",
-    78: "pokey",
-    79: "p_block",
-    80: "sprint_platform",
-    81: "smb2_mushroom",
-    82: "donut",
-    83: "skewer",
-    84: "snake_block",
-    85: "track_block",
-    86: "charvaargh",
-    87: "slight_slope",
-    88: "steep_slope",
-    89: "reel_camera",
-    90: "checkpoint_flag",
-    91: "seesaw",
-    92: "red_coin",
-    93: "clear_pipe",
-    94: "conveyor_belt",
-    95: "key",
-    96: "ant_trooper",
-    97: "warp_box",
-    98: "bowser_jr",
-    99: "on_off_block",
-    100: "dotted_line_block",
-    101: "water_marker",
-    102: "monty_mole",
-    103: "fish_bone",
-    104: "angry_sun",
-    105: "swinging_claw",
-    106: "tree",
-    107: "piranha_creeper",
-    108: "blinking_block",
-    109: "sound_effect",
-    110: "spike_block",
-    111: "mechakoopa",
-    112: "crate",
-    113: "mushroom_trampoline",
-    114: "porkupuffer",
-    115: "cinobic",
-    116: "super_hammer",
-    117: "bully",
-    118: "icicle",
-    119: "exclamation_block",
-    120: "lemmy",
-    121: "morton",
-    122: "larry",
-    123: "wendy",
-    124: "iggy",
-    125: "roy",
-    126: "ludwig",
-    127: "cannon_box",
-    128: "propeller_box",
-    129: "goomba_mask",
-    130: "bullet_bill_mask",
-    131: "red_pow_box",
-    132: "on_off_trampoline",
+sprite_pos_dict_backup = {10: (5, 0), 11: (3, 0), 12: (7, 0)}
+
+sprite_pos_dict = {16: (5, 0), 17: (3, 0), 18: (7, 0)}
+
+# 13: single_pipe_head, 14: single_pipe_body, 15: pipe_head_left, 16: pipe_head_right, 17: pipe_body_left, 18: pipe_body_right 19: blaster_head
+# 20: blaster_neck, 21: blaster_body, 22: single_semisolid_platform, 23: semisolid_platform_left, 24: semisolid_platform_right, 25: semisolid_platform_middle
+extra_pos_dict_backup = {13: (6, 4), 14: (6, 5), 15: (2, 2), 16: (2, 3), 17: (2, 4), 18: (2, 5), 19: (0, 3), 
+                         20: (0, 4), 21: (0, 5), 22: (5, 3), 23: (5, 4), 24: (5, 5), 25: (5, 6)}
+
+# 19: single_pipe_head, 20: single_pipe_body, 21: pipe_head_left, 22: pipe_head_right, 23: pipe_body_left, 24: pipe_body_right 25: blaster_head
+# 26: blaster_neck, 27: blaster_body, 28: single_semisolid_platform, 29: semisolid_platform_left, 30: semisolid_platform_right, 31: semisolid_platform_middle
+extra_pos_dict = {19: (6, 4), 20: (6, 5), 21: (2, 2), 22: (2, 3), 23: (2, 4), 24: (2, 5), 25: (0, 3),
+                 26: (0, 4), 27: (0, 5), 28: (5, 3), 29: (5, 4), 30: (5, 5), 31: (5, 6)}
+
+MAIF_Encoding_backup = {
+    'M': 0,   # mario
+    'F': 0,   # exit
+    '-': 0,   # background
+    '#': 1,   # hard block
+    'S': 2,   # block
+    'U': 2,   # mushroom block
+    '2': 2,   # invisible coin block
+    '1': 2,   # invisible life-up block
+    'C': 2,   # coin block
+    'L': 2,   # life-up block
+    '@': 3,   # mushroom question block
+    '?': 3,   
+    '!': 3,   # coin question block
+    'Q': 3,   
+    'D': 0,   # used block, should not appear in a normal level
+    'o': 4,   # coin
+    't': 5,   # pipe
+    'T': 5,   # flower pipe
+    '*': 6,   # bullet bill blaster
+    'B': 6,   # bullet bill blaster head
+    'b': 6,   # bullet bill blaster neck and body
+    '|': 7,   # semisolid platform body
+    '%': 8,   # semisolid platform
+    'X': 9,   # ground
+    'g': 10,  # goomba
+    'E': 10,
+    'G': 10,  # winged goomba
+    'r': 11,  # red koopa
+    'R': 11,  # winged red koopa
+    'k': 11,  # green koopa
+    'K': 11,  # winged green koopa
+    'y': 12,  # spiky
+    'Y': 12,  # winged spiky
 }
 
+LEVEL2STR_LOOKUP_MAP = {0: '-', 1: '#', 2: 'S', 3: 'U', 4: '2', 5: '1',
+                    6: 'C', 7: 'L', 8: '@', 9: '!', 10: 'o',
+                    11: 't', 12: '*', 13: '|', 14: '%', 15: 'X',
+                    16: 'g', 17: 'r', 18: 'y'}
+
+# Replace '?' to '@', 'Q' to '!', 'T' to 't', 'B'/'b' to '*', 'E' to 'g', 'R' to 'r', 'K' to 'k', 'Y' to 'y'
+
+MAIF_Encoding = {
+    'M': 0,   # mario
+    'F': 0,   # exit
+    '-': 0,   # background
+    '#': 1,   # hard block
+    'S': 2,   # block
+    'U': 3,   # mushroom block
+    '2': 4,   # invisible coin block
+    '1': 5,   # invisible life-up block
+    'C': 6,   # coin block
+    'L': 7,   # life-up block
+    '@': 8,   # mushroom question block
+    '?': 8,   
+    '!': 9,   # coin question block
+    'Q': 9,   
+    'D': 0,   # used block, should not appear in a normal level
+    'o': 10,   # coin
+    't': 11,   # pipe
+    'T': 11,   # flower pipe
+    '*': 12,   # bullet bill blaster
+    'B': 12,   # bullet bill blaster head
+    'b': 12,   # bullet bill blaster neck and body
+    '|': 13,   # semisolid platform body
+    '%': 14,   # semisolid platform
+    'X': 15,   # ground
+    'g': 16,  # goomba
+    'E': 16,
+    'G': 16,  # winged goomba
+    'r': 17,  # red koopa
+    'R': 17,  # winged red koopa
+    'k': 17,  # green koopa
+    'K': 17,  # winged green koopa
+    'y': 18,  # spiky
+    'Y': 18,  # winged spiky
+}
 
 def read_pos_dict():
     with open('data/spritesheet.json', 'r') as sf:
@@ -195,9 +158,17 @@ def get_frame(n):
         return None
 
 
+def get_pos(n):
+    if n in tile_pos_dict:
+        return True, tile_pos_dict[n]
+    elif n in sprite_pos_dict:
+        return False, sprite_pos_dict[n]
+    return None
+
+
 def read_template():
-    path_tileset = r"data/img/tileset.png"
-    path_spritesheet = r"data/img/spritesheet.png"
+    path_tileset = r"data/img/mapsheet.png"
+    path_spritesheet = r"data/img/enemysheet.png"
 
     # tileset_img = cv2.imread(path_tileset, cv2.IMREAD_UNCHANGED)
     # spritesheet_img = cv2.imread(path_spritesheet, cv2.IMREAD_UNCHANGED)
@@ -258,44 +229,123 @@ def save_txt(lines, filename, dst_dir):
 	with open(path, 'w') as f:
 		f.writelines(line + '\n' for line in lines)
 
+# handle pipe, bullet_bill_blaster, semisolid_platform
+# pipe: (single)13 15  bullet_bill_blaster: 19  semisolid_platform: 22
+def process_unfixed_element_backup(t):
+    h, w = t.shape[-2], t.shape[-1]
+    level_tiles = torch.zeros_like(t)
+    for row in range(h):
+        img_row = []  # container for 3x16x16 tensor
+        row_data = t[row, :]  # (w, )
+        for col in range(w):
+            i = row_data[col].item()
+            if i == 5:
+                temp = 0
+                singlePipe = False
+                if col < w-1 and row_data[col+1].item() != 5 and col > 0 and row_data[col-1].item() != 5:
+                    singlePipe = True
+                if col > 0 and (level_tiles[row, col-1].item() == 15 or level_tiles[row, col-1].item() == 17):  # 15: pipe_head_left / 17: pipe_body_left
+                    temp += 1
+                if row > 0 and t[row-1, col].item() == 5:  # 上一行同一列为pipe元素
+                    temp = temp + 1 if singlePipe else temp + 2
+                level_tiles[row, col] = 13 + temp if singlePipe else 15 + temp
+            elif i == 6:  # bullet_bill_blaster
+                temp = 0
+                if row > 0 and t[row-1, col].item() == 6: 
+                    temp += 1
+                if row > 1 and t[row-2, col].item() == 6:
+                    temp += 1
+                level_tiles[row, col] = 19 + temp 
+            elif i == 8:  # semisolid platform
+                temp = 0
+                if col > 0 and t[row, col-1].item() == 8:
+                    temp += 2
+                if col < w - 1 and t[row, col+1].item() == 8:
+                    temp += 1
+                level_tiles[row, col] = 22 + temp
+            else:
+                level_tiles[row, col] = i
 
+    return level_tiles
+
+
+# handle pipe, bullet_bill_blaster, semisolid_platform
+# pipe: (single)16 18  bullet_bill_blaster: 22  semisolid_platform: 25
+def process_unfixed_element(t):
+    h, w = t.shape[-2], t.shape[-1]
+    level_tiles = torch.zeros_like(t)
+    for row in range(h):
+        img_row = []  # container for 3x16x16 tensor
+        row_data = t[row, :]  # (w, )
+        for col in range(w):
+            i = row_data[col].item()
+            if i == 11:  # pipe
+                temp = 0
+                singlePipe = False
+                if col < w-1 and row_data[col+1].item() != 11 and col > 0 and row_data[col-1].item() != 11: #左右列都不为pipe元素
+                    singlePipe = True
+                if col > 0 and (level_tiles[row, col-1].item() == 21 or level_tiles[row, col-1].item() == 23): #同行左列为pipe元素
+                    temp += 1
+                if row > 0 and t[row-1, col].item() == 11: # 上一行同一列为pipe元素
+                    temp = temp + 1 if singlePipe else temp + 2
+                level_tiles[row, col] = 19 + temp if singlePipe else 21 + temp
+            elif i == 12:  # bullet_bill_blaster
+                temp = 0
+                if row > 0 and t[row-1, col].item() == 12:
+                    temp += 1
+                if row > 1 and t[row-2, col].item() == 12:
+                    temp += 1
+                level_tiles[row, col] = 25 + temp
+            elif i == 14:  # semisolid platform
+                temp = 0
+                if col > 0 and t[row, col-1].item() == 14:
+                    temp += 2
+                if col < w - 1 and t[row, col+1].item() == 14:
+                    temp += 1
+                level_tiles[row, col] = 28 + temp
+            else:
+                level_tiles[row, col] = i
+
+    return level_tiles
+
+# tensor: (c,h,w)
 def better_visualize(tensor, tileset, spritesheet):
     shape = tensor.shape
     h, w = shape[-2], shape[-1]
     tile_h, tile_w = 16, 16
-    new_tensor = torch.round(tensor.mul(0.5).add(0.5).mul(NUM_OF_OBJS)).type(torch.uint8).squeeze()
+    # new_tensor = torch.round(tensor.mul(0.5).add(0.5).mul(NUM_OF_OBJS)).type(torch.uint8).squeeze()
     target = torch.ones((3, h * tile_h, w * tile_w), dtype=torch.uint8) * torch.tensor(BG_COLOR_RGB).reshape(3,1,1)  # RGB CHW
 
+    bg_element = torch.ones((3, tile_h, tile_w), dtype=torch.uint8) * torch.tensor(BG_COLOR_RGB).reshape(3,1,1)
+    t = torch.argmax(tensor, dim=0)  # (h, w)
+    level_tiles = process_unfixed_element(t)
+
     for row in range(h):
+        img_row = []  # container for 3x16x16 tensor
+        row_data = level_tiles[row, :]  # (w, )
         for col in range(w):
-            # tstart_y: target image's starting point of y coordinate
-            tstart_y = row * tile_h
-            tstart_x = col * tile_w
-            info = get_frame(new_tensor[row][col].item()-1)
-            ts_alpha = tileset[3,:,:]
-            ss_alpha = spritesheet[3,:,:]
+            i = row_data[col].item()
+            info = get_pos(i)   # have to use .item(), or it can not access dictionary by index, so it always gets default 'background', so the result is all empty
+            element = bg_element
             if info is not None:
-                frame, is_tile, name = info
-                # source start row(column), tileset and spritesheet's starting point of row(column)
-                start_y = frame['y'] * tile_h
-                start_x = frame['x'] * tile_w
+                is_tile, pos = info
+                x0, y0 = pos[1] * tile_w, pos[0] * tile_h
+                x1, y1 = x0 + tile_w, y0 + tile_h   # all elements have (1xtile_h, 1xtile_w) size
+                if i == 17:  # koopa
+                    y0 -= tile_h
+                element = tileset[:, y0:y1, x0:x1] if is_tile else spritesheet[:, y0:y1, x0:x1]
+                # handle alpha
+                alpha_channel = element[3, :, :]
+                alpha_mask = alpha_channel == 0
+                if torch.any(alpha_mask):
+                    # (3, #of transparent pixels)
+                    element[:3, alpha_mask] = torch.tensor(BG_COLOR_RGB, dtype=torch.uint8).reshape(3,1)
+                if i == 17 and row > 1:
+                    target[:, (row-1)*tile_h : row*tile_h, col*tile_w : col*tile_w+tile_w] = element[:3, :16, :] 
+            # img_row.append(element[:3, :, :])
+            img_row.append(element[:3, -16:, :])
 
-                # source end row(column), according to the element's height(width) and the bounds
-                if tstart_y + frame['height'] * tile_h > target.shape[1]:
-                    end_y = start_y + (target.shape[1] - tstart_y)
-                else:
-                    end_y = start_y + frame['height'] * tile_h
-                if tstart_x + frame['width'] * tile_w > target.shape[2]:
-                    end_x = start_x + (target.shape[2] - tstart_x)
-                else:
-                    end_x = start_x + frame['width'] * tile_w
-
-                # target end row(column), according to the element's height(width) and the bounds
-                tend_y = min(target.shape[1], tstart_y + frame['height'] * tile_h)
-                tend_x = min(target.shape[2], tstart_x + frame['width'] * tile_w)
-
-                tile_tensor = tileset[:3, start_y:end_y, start_x:end_x] if is_tile else spritesheet[:3, start_y:end_y, start_x:end_x]
-                target[:, tstart_y:tend_y, tstart_x:tend_x] = tile_tensor
+        target[:, row*tile_h : row*tile_h+tile_h, :] = torch.cat(img_row, dim=-1)  # (3,16,256)
 
     return target
 
@@ -399,5 +449,84 @@ def set_device(args, distributed=False, rank=0):
 			args = set_gpu(args, distributed, rank)
 	return args
 
+
+
+### Just for Training Data Preparation and Data Augmentation.
+### Will Never Get Run in Actual Training Process
+
+# split a complete level to multiple 16x16 scene
+# level should be a 16xn list
+def split_level(level_path, prefix=''):
+    with open(level_path, 'r') as f:
+        lines = f.readlines()
+        level = [line.strip() for line in lines]
+    level_name = level_path[level_path.rfind('/') + 1:].replace('.txt', '')
+    h, w = len(level), len(level[0])
+    split_num, remainder = w // 16, w % 16
+    for i in range(split_num):
+        splits = []
+        for j in range(h):
+            split = level[j][i * 16:i * 16 + 16]
+            splits.append(split)
+        path = f"datasets/scenes/train/{prefix}_{level_name}_split{i}.txt"
+        # path = os.path.join(os.path.abspath('..'), f"Palette/datasets/scenes/train/{prefix}_{level_name}_split{i}.txt")
+        with open(path, 'w') as f:
+            f.writelines(line + '\n' for line in splits)
+    # remainder
+    if remainder != 0:
+        fill = ['-' * 16 for _ in range(16)]
+        fill[-2] = 'X' * 16
+        fill[-1] = 'X' * 16
+        # start = split_num
+        # end = split_num + remainder
+        for j in range(16):
+            line = level[j][split_num * 16:]  # remainder cols
+            fill[j] = line + fill[j][remainder:]
+        path = f"datasets/scenes/train/{prefix}_{level_name}_split{i+1}.txt"
+        # path = os.path.join(os.path.abspath('..'), f"Palette/datasets/scenes/train/{level_name}_split{i + 1}.txt")
+        with open(path, 'w') as f:
+            f.writelines(line + '\n' for line in fill)
+
+
+# exchange left half and right half of a 16x16 txt file to get a new txt file, a way of data augmentation
+# data should be a 16x16 ndarray
+def exchange_left_right(scene_path):
+    with open(scene_path, 'r') as f:
+        lines = f.readlines()
+        scene = [line.strip() for line in lines]
+    scene_name = scene_path[scene_path.rfind('/') + 1:].replace('.txt', '')
+    h, w = len(scene), len(scene[0])
+    splits = []
+    for j in range(h):
+        right = scene[j][w // 2:] if w % 2 == 0 else scene[j][w // 2 + 1]
+        left = scene[j][0:w // 2]
+        split = right + left
+        splits.append(split)
+    path = f"datasets/scenes/train/{scene_name}_rl.txt"
+    with open(path, 'w') as f:
+        f.writelines(line + '\n' for line in splits)
+
+# abspath = os.path.abspath('..')
+# split_level(os.path.join(abspath, 'datasets/levels/lvl-1.txt'))
+# exchange_left_right(os.path.join(abspath, 'datasets/scenes/train/000000000001_0.txt'))
+
+def gen_flist(dir):
+    for fname in os.listdir(dir):
+        with open('datasets/scenes/flist/train2.flist', 'a') as f:
+            if fname.endswith('.txt'):
+                path = os.path.join(dir, fname)
+                f.write(path + '\n')
+
+
+# if __name__ == '__main__':
+#     # gen_flist('datasets/scenes/train')
+#     # abspath = os.path.abspath('..')
+#     # path = os.path.join(abspath, 'Palette/datasets/levels/original')
+#     for root, dirs, files in os.walk('datasets/levels'):
+#         prefix = root.split('/')[-1]
+#         print(prefix)
+#         for file in files:
+#             path = os.path.join(root, file)
+#             split_level(path, prefix)
 
 
