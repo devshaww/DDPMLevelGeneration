@@ -21,6 +21,12 @@ Set `resume_state` of configure file to the directory of previous checkpoint. Ta
 python3 run.py
 ```
 
+4. Result
+   
+<img width="974" alt="res_overall_3" src="https://github.com/devshaww/DDPMLevelGeneration/assets/22312553/41b576ec-d33c-4294-8616-930b7c9154a8">
+<img width="500" alt="res_overall_4" src="https://github.com/devshaww/DDPMLevelGeneration/assets/22312553/f7e6bef9-ae83-472d-afe4-8c181b5ab6bf">
+
+
 ## Acknowledge
 This work is based on the following theoretical works:
 - [Denoising Diffusion Probabilistic Models](https://arxiv.org/pdf/2006.11239.pdf)
