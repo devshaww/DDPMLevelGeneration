@@ -1,7 +1,5 @@
 # Continuous Level Generation Using Conditional Diffusion Models
 
-Reference: [Project](https://github.com/Janspiry/Palette-Image-to-Image-Diffusion-Models)
-
 ## Brief
 This is a research project to generate levels for Super Mario Bros using diffusion model.
 
@@ -36,3 +34,4 @@ This work is based on the following theoretical works:
 and we are benefiting a lot from the following projects:
 - [openai/guided-diffusion](https://github.com/openai/guided-diffusion)
 - [LouisRouss/Diffusion-Based-Model-for-Colorization](https://github.com/LouisRouss/Diffusion-Based-Model-for-Colorization)
+- [Janspiry/Palette-Image-to-Image-Diffusion-Models](https://github.com/Janspiry/Palette-Image-to-Image-Diffusion-Models)
